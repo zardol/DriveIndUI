@@ -1,7 +1,25 @@
-import type { PlantSnapshot, ScenarioId } from '@kosta/shared';
-// Contract skeleton. Assigned to the simulation implementer.
-export interface EngineOptions { seed?: number; scenario?: ScenarioId }
-export interface Engine { readonly seed: number; readonly scenario: ScenarioId }
-export function createEngine(options: EngineOptions = {}): Engine { return { seed: options.seed ?? 42, scenario: options.scenario ?? 'normal' }; }
-export function advanceEngine(_engine: Engine, _seconds: number): void { throw new Error('Simulation implementation pending'); }
-export function getSnapshot(_engine: Engine): PlantSnapshot { throw new Error('Simulation implementation pending'); }
+export {
+  createEngine,
+  advanceEngine,
+  getSnapshot,
+  SHIFT_SECONDS,
+  SHIFT_PLAN,
+  SUPPLY_INTERVAL_SECONDS,
+  INITIAL_QUEUED_UNITS,
+  QUALITY_REJECT_RATE,
+  HISTORY_INTERVAL_SECONDS,
+  DEFAULT_SEED,
+  DEFAULT_SCENARIO,
+  WORK_UNITS_PER_SECOND,
+  SCENARIO_EVENTS,
+} from './engine';
+export type { Engine, EngineOptions, EngineStationState, ScenarioEvent } from './engine';
+export type {
+  HistoryPoint,
+  Incident,
+  PlantSnapshot,
+  ScenarioId,
+  StationId,
+  StationSnapshot,
+  StationStatus,
+} from '@kosta/shared';
