@@ -42,17 +42,17 @@ describe('factoryLayout', () => {
 
     it('rejects overlapping stations', () => {
       const badStations = [...DEFAULT_LAYOUT.stations];
-      badStations[1] = { ...badStations[1], position: [-5, -6] };
+      badStations[1] = { ...badStations[1], position: [...DEFAULT_LAYOUT.stations[0].position] };
       expect(() => parseFactoryLayout({ ...DEFAULT_LAYOUT, stations: badStations })).toThrow(/близко/i);
 
       const closeStations = [...DEFAULT_LAYOUT.stations];
-      closeStations[1] = { ...closeStations[1], position: [-5 + 7, -6 + 10] };
+      closeStations[1] = { ...closeStations[1], position: [DEFAULT_LAYOUT.stations[0].position[0] + 7, DEFAULT_LAYOUT.stations[0].position[1] + 10] };
       expect(() => parseFactoryLayout({ ...DEFAULT_LAYOUT, stations: closeStations })).toThrow(/близко/i);
     });
 
     it('rejects stations outside floor bounds or margin', () => {
       const badStations = [...DEFAULT_LAYOUT.stations];
-      badStations[0] = { ...badStations[0], position: [-22, 0] };
+      badStations[0] = { ...badStations[0], position: [-50, 0] };
       expect(() => parseFactoryLayout({ ...DEFAULT_LAYOUT, stations: badStations })).toThrow(/границы/i);
     });
 
@@ -66,10 +66,10 @@ describe('factoryLayout', () => {
       const rotated = structuredClone(DEFAULT_LAYOUT);
       rotated.stations[0].rotation = 90;
       rotated.stations[1].rotation = 90;
-      rotated.stations[1].position = [4, -6];
+      rotated.stations[1].position = [37, -33];
       expect(() => parseFactoryLayout(rotated)).toThrow(/близко/i);
       const terminal = structuredClone(DEFAULT_LAYOUT);
-      terminal.terminals.supply = [-10, -11];
+      terminal.terminals.supply = [33, -28];
       expect(() => parseFactoryLayout(terminal)).toThrow(/близко/i);
     });
 
@@ -90,13 +90,13 @@ describe('factoryLayout', () => {
       expect(() => parseFactoryLayout(input)).toThrow(/свойства/i);
       const valid = parseFactoryLayout(DEFAULT_LAYOUT);
       valid.terminals.supply[0] = 100;
-      expect(DEFAULT_LAYOUT.terminals.supply[0]).toBe(-16);
+      expect(DEFAULT_LAYOUT.terminals.supply[0]).toBe(-44);
     });
   });
 
   describe('stationCanAnimate', () => {
     const base: StationSnapshot = {
-      id: 'welding', name: 'W', status: 'running', inputQueue: 0, bufferCapacity: 8,
+      id: 'welding', name: 'W', status: 'running', inputQueue: 0, queuedUnits: 0, arrivingUnits: 0, bufferCapacity: 8,
       inProcess: true, progress: 0.5, cycleSeconds: 10, completed: 0,
       utilizationPercent: 100, downtimeSeconds: 0, throughputPerHour: 0
     };

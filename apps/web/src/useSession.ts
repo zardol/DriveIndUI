@@ -26,7 +26,7 @@ export interface SessionApi {
   retryNow: () => void;
 }
 
-const POLL_INTERVAL_MS = 1000;
+const POLL_INTERVAL_MS = 250;
 const RETRY_DELAYS_MS: readonly number[] = [1000, 2000, 3000, 5000];
 
 export function useSession(): SessionApi {
@@ -119,7 +119,7 @@ export function useSession(): SessionApi {
           const delay =
             failures > 0
               ? (RETRY_DELAYS_MS[Math.min(failures, RETRY_DELAYS_MS.length) - 1] ?? 5000)
-              : POLL_INTERVAL_MS;
+              : document.hidden ? 1000 : POLL_INTERVAL_MS;
           schedule(delay);
         }
       }

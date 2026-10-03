@@ -38,7 +38,7 @@ export async function buildApp(options: { store?: SessionStore; autoTick?: boole
     return reply.status(500).send({ error: 'INTERNAL_ERROR', message: 'Не удалось обработать запрос. Повторите попытку.' });
   });
 
-  app.get('/api/health', async () => ({ status: 'ok', version: '0.4.0', dataMode: 'synthetic' }));
+  app.get('/api/health', async () => ({ status: 'ok', version: '0.5.0', dataMode: 'synthetic' }));
 
   app.post('/api/sessions', async (request, reply) => {
     if (!z.object({}).strict().safeParse(request.body ?? {}).success) {

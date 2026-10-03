@@ -106,11 +106,11 @@ export function StationDetails({ snapshot, selected, onSelect }: StationDetailsP
           note={station.inProcess ? `Цикл ${formatDuration(station.cycleSeconds)}` : 'Нет изделия в обработке'}
         />
         <Metric
-          label='Очередь на входе'
+          label='Входной буфер'
           value={`${formatInt(station.inputQueue)} из ${formatInt(capacity)}`}
           progress={station.inputQueue / capacity}
           tone={queueFull ? 'warn' : 'default'}
-          note={queueFull ? 'Буфер заполнен' : 'Вместимость буфера станции'}
+          note={`${station.queuedUnits} ожидают · ${station.arrivingUnits} подъезжают${queueFull ? ' · буфер заполнен' : ''}`}
         />
         <Metric
           label='Загрузка'

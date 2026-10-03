@@ -1,13 +1,15 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Box, Map, Maximize2, RotateCcw, Upload, Download, Focus } from 'lucide-react';
-import type { PlantSnapshot, StationId } from '@kosta/shared';
+import { STATIONS, type ConveyorVehicleSnapshot, type SessionSnapshot, type StationId } from '@kosta/shared';
 import { FlowDiagram } from './FlowDiagram';
-import { STATUS_META } from '../status';
+import { buildConveyorRoute } from '../three/conveyorPath';
 import { DEFAULT_LAYOUT, parseFactoryLayout, type FactoryLayout } from '../three/factoryLayout';
 import type { CameraRequest, CameraView } from '../three/FactoryCanvas';
 import '../factory3d.css';
 
 const FactoryCanvas = lazy(() => import('../three/FactoryCanvas'));
+const VEHICLE_STATE: Record<ConveyorVehicleSnapshot['state'], string> = { moving: 'В пути', queued: 'В очереди', processing: 'Обработка', blocked: 'Выход занят' };
+const stageName = (vehicle: ConveyorVehicleSnapshot) => vehicle.stage === 'outbound' ? 'К выходу' : STATIONS.find(station => station.id === vehicle.stage)?.name;
 
 class SceneBoundary extends Component<{ children: ReactNode; fallback: ReactNode; onFailure: () => void }, { failed: boolean }> {
   state = { failed: false };
@@ -17,7 +19,7 @@ class SceneBoundary extends Component<{ children: ReactNode; fallback: ReactNode
 }
 
 export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTogglePlayback, controlsDisabled }: {
-  snapshot: PlantSnapshot; selected: StationId; animate: boolean; stale: boolean; onSelect: (id: StationId) => void;
+  snapshot: SessionSnapshot; selected: StationId; animate: boolean; stale: boolean; onSelect: (id: StationId) => void;
   onTogglePlayback: () => void; controlsDisabled: boolean;
 }) {
   const [mode, setMode] = useState<'3d' | '2d'>('3d');
@@ -30,10 +32,21 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
   const [visible, setVisible] = useState(true);
   const [foreground, setForeground] = useState(!document.hidden);
   const [wide, setWide] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [cameraRequest, setCameraRequest] = useState<CameraRequest>({ view: 'overview', sequence: 0, station: selected });
   const viewport = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const loadingFile = useRef(0);
+  const vehicles = snapshot.conveyor.vehicles;
+  const selectedVehicle = vehicles.find(vehicle => vehicle.id === selectedVehicleId);
+  const movingCount = vehicles.filter(vehicle => vehicle.state === 'moving').length;
+  const workingCount = vehicles.filter(vehicle => vehicle.state === 'processing').length;
+  const waitingCount = vehicles.length - movingCount - workingCount;
+
+  useEffect(() => {
+    setSelectedVehicleId(null);
+    setCameraRequest(previous => ({ view: 'overview', station: previous.station, sequence: previous.sequence + 1 }));
+  }, [snapshot.sessionId, snapshot.revision]);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -57,8 +70,9 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
   }, []);
 
   const reportFailure = useCallback(() => { setFailed(true); setMode('2d'); setWide(false); }, []);
-  const camera = (view: CameraView, station = selected) => setCameraRequest(previous => ({ view, station, sequence: previous.sequence + 1 }));
+  const camera = (view: CameraView, station = selected, vehicleId?: string) => setCameraRequest(previous => ({ view, station, vehicleId, sequence: previous.sequence + 1 }));
   const choose = (id: StationId) => { onSelect(id); camera('station', id); };
+  const chooseVehicle = (id: string) => { setSelectedVehicleId(id); camera('vehicle', selected, id); };
   const upload = async (file: File) => {
     const version = ++loadingFile.current;
     try {
@@ -68,6 +82,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
       let value: unknown;
       try { value = JSON.parse(text); } catch { throw new Error('Не удалось прочитать JSON. Сверьте файл с шаблоном схемы.'); }
       const next = parseFactoryLayout(value);
+      buildConveyorRoute(next);
       setLayout(next); setLayoutChanged(true); setLayoutError(null); camera('overview');
     } catch (error) {
       if (version === loadingFile.current) setLayoutError(error instanceof Error ? error.message : 'Не удалось загрузить схему.');
@@ -92,19 +107,29 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
         <button type='button' onClick={() => camera('overview')}><RotateCcw size={14} />Общий вид</button>
         <button type='button' onClick={() => camera('top')}>Сверху</button>
         <button type='button' onClick={() => camera('station')}><Focus size={14} />К участку</button>
+        <button type='button' disabled={vehicles.length === 0} aria-pressed={cameraRequest.view === 'vehicle'} onClick={() => chooseVehicle(selectedVehicle?.id ?? vehicles[0].id)}>Следить за машиной</button>
         <button type='button' aria-pressed={wide} onClick={() => setWide(!wide)}><Maximize2 size={14} />{wide ? 'Свернуть' : 'Развернуть'}</button>
       </div>}
     </div>
     {failed && <p className='plant-notice' role='status'>3D недоступно на этом устройстве. Открыта 2D-схема; расчёты и управление доступны.</p>}
+    <div className='plant-fleet-stats' aria-label='Машины на конвейере'>
+      <strong>В линии <b>{vehicles.length}</b></strong><span>В пути {movingCount}</span><span>На обработке {workingCount}</span><span>Ожидают {waitingCount}</span>
+      <small>Каждая машина учтена · буферы по 8 мест · без обгона</small>
+    </div>
     <div ref={viewport} className={mode === '3d' ? 'plant-viewport' : 'plant-flat'} aria-label={mode === '3d' ? 'Интерактивный трёхмерный цех' : 'Двумерная схема'} role='region'>
       {mode === '3d' ? <SceneBoundary onFailure={reportFailure} fallback={flat}>
         <Suspense fallback={<div className='plant-loading' role='status'><Box size={32} /><strong>Собираем трёхмерный цех…</strong><span>Готовим оборудование и камеру</span></div>}>
           <FactoryCanvas snapshot={snapshot} selected={selected} onSelect={choose} layout={layout} quality={quality}
             animate={animate && !stale} reducedMotion={reducedMotion} renderActive={visible && foreground}
-            cameraRequest={cameraRequest} onFailure={reportFailure} />
+            cameraRequest={cameraRequest} onFailure={reportFailure} selectedVehicleId={selectedVehicleId} onSelectVehicle={chooseVehicle} />
         </Suspense>
       </SceneBoundary> : flat}
       {mode === '3d' && <div className='plant-overlay' aria-hidden='true'><span>ЦЕХ / {snapshot.scenario === 'normal' ? 'ШТАТНЫЙ РЕЖИМ' : 'СЦЕНАРИЙ'}</span><strong>{stale ? 'Нет связи' : snapshot.elapsedSeconds >= snapshot.shiftSeconds ? 'Смена завершена' : animate ? 'Смена идёт' : 'Смена на паузе'}</strong><small>{layout.units === 'meters' ? 'Размеры из загруженной схемы' : 'Условные размеры'}</small></div>}
+      {mode === '3d' && selectedVehicleId && <div className='plant-vehicle-card' role='status'>
+        <strong>{selectedVehicleId}</strong>
+        <span>{selectedVehicle ? `${stageName(selectedVehicle)} · ${VEHICLE_STATE[selectedVehicle.state]}` : 'Автомобиль покинул линию'}</span>
+        {selectedVehicle?.outcome === 'rejected' && <small>Отмечен брак · следует к выходу</small>}
+      </div>}
     </div>
     {mode === '3d' && <>
       <div className='plant-bottom'>
@@ -113,12 +138,23 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
       </div>
       <div className='plant-stations' role='group' aria-label='Выбрать участок в 3D'>
         {snapshot.stations.map((station, index) => <button key={station.id} type='button' aria-pressed={selected === station.id} onClick={() => choose(station.id)}>
-          <span className={`plant-station-dot is-${station.status}`} /><span><strong>{index + 1}. {station.name}</strong><small>{STATUS_META[station.status].short} · очередь {station.inputQueue}/{station.bufferCapacity}</small></span>
+          <span className={`plant-station-dot is-${station.status}`} /><span><strong>{index + 1}. {station.name}</strong><small>Буфер {station.inputQueue}/{station.bufferCapacity} · ждут {station.queuedUnits}</small></span>
           <b>{station.inProcess ? `${Math.round(station.progress * 100)}%` : '—'}</b>
         </button>)}
       </div>
       {reducedMotion && <p className='plant-notice'>Анимация отключена согласно настройкам устройства. Показатели продолжают обновляться.</p>}
     </>}
+    <details className='plant-manifest'>
+      <summary>Автомобили по ID · {vehicles.length}</summary>
+      <p>Выберите машину для наблюдения. Входной буфер включает подъезжающие машины и остановившуюся очередь.</p>
+      <div className='plant-vehicle-list'>
+        {vehicles.map(vehicle => <button key={vehicle.id} type='button' aria-pressed={selectedVehicleId === vehicle.id}
+          data-vehicle-id={vehicle.id} data-distance={vehicle.distance} data-state={vehicle.state} disabled={mode !== '3d'} onClick={() => chooseVehicle(vehicle.id)}>
+          <strong>{vehicle.id}</strong><span>{stageName(vehicle)}</span><small>{VEHICLE_STATE[vehicle.state]}</small>
+        </button>)}
+        {vehicles.length === 0 && <p>На конвейере нет автомобилей.</p>}
+      </div>
+    </details>
     <details className='plant-layout'>
       <summary>Размещение участков · {layout.title}</summary>
       <p>Можно загрузить расположение четырёх участков по шаблону. Файл читается на этом устройстве и меняет только 3D-размещение. Показатели пока остаются синтетическими; обновление страницы вернёт учебную схему.</p>

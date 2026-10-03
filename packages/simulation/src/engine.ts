@@ -1,27 +1,10 @@
 /**
- * Deterministic discrete-time simulation of the KostaAllur production line.
- *
- * Time moves in fixed one-second ticks. advanceEngine(engine, n) runs exactly n ticks,
- * capped at the end of the shift. As a result, any way of splitting a time span into
- * calls gives the same state. The engine uses no wall clock, timers, I/O or unseeded
- * randomness.
- *
- * Each tick runs these phases in order:
- *   1. load  - idle, non-stopped stations take the next unit from their input buffer
- *   2. work  - every loaded, unfinished, non-stopped station does one second of work
- *   3. move  - finished units go downstream, starting with the last station; a unit
- *              stays (progress 1, blocked) if the next buffer is full; the quality
- *              station sends units out of the line as good or rejected (seeded RNG)
- *   4. supply - every SUPPLY_INTERVAL_SECONDS a new body is offered to welding and
- *              counted only if the buffer accepts it
- *   5. load  - stations load again, so snapshots show freshly started work
- * Then the clock moves forward and the scenario conditions for the new second are
- * applied (slowdowns, stops, incidents).
- *
- * A unit moved in phase 3 can only be worked on in the next tick. So one unit never
- * gets work at two stations in the same second.
+ * Deterministic one-second accumulating conveyor; no wall clock or unseeded RNG.
+ * Tick order: work -> release -> move front to back -> load -> exit -> supply.
+ * Arrivals can start work only next tick. Vehicles retain their ID and distance
+ * through every stage; station queues are derived from the active vehicle list.
  */
-import { STATIONS } from '@kosta/shared';
+import { STATIONS, CONVEYOR_SPEC } from '@kosta/shared';
 import type {
   HistoryPoint,
   Incident,
@@ -31,35 +14,23 @@ import type {
   StationId,
   StationSnapshot,
   StationStatus,
+  ConveyorSnapshot
 } from '@kosta/shared';
 import { createRng, nextRandom } from './prng';
 import type { RngState } from './prng';
 
-/** Length of one shift in simulated seconds (8 hours). */
 export const SHIFT_SECONDS = 28_800;
-/** Planned good units for one shift. */
 export const SHIFT_PLAN = 70;
-/** A new body is offered to the welding input buffer every N simulated seconds. */
 export const SUPPLY_INTERVAL_SECONDS = 240;
-/** Bodies already waiting in the welding input buffer when the shift starts. */
 export const INITIAL_QUEUED_UNITS = 1;
-/** Probability that a car finishing quality control is rejected. */
 export const QUALITY_REJECT_RATE = 0.03;
-/** Spacing of history samples in simulated seconds. */
 export const HISTORY_INTERVAL_SECONDS = 60;
 export const DEFAULT_SEED = 42;
 export const DEFAULT_SCENARIO: ScenarioId = 'normal';
-/**
- * Integer work units a healthy station does per second. One car needs
- * cycleSeconds * WORK_UNITS_PER_SECOND units. 90 divides evenly by the scenario
- * slowdown factors (1.8 gives 50, 2 gives 45), so progress uses exact integer math
- * and never drifts from floating point accumulation.
- */
 export const WORK_UNITS_PER_SECOND = 90;
 
 const SCENARIO_IDS: readonly ScenarioId[] = ['normal', 'equipment', 'bottleneck'];
 const SECONDS_PER_HOUR = 3600;
-/** Nominal cycle of the slowest station; only used to cap the naive forecast. */
 const NOMINAL_BOTTLENECK_CYCLE_SECONDS = STATIONS.reduce((max, s) => Math.max(max, s.cycleSeconds), 1);
 
 export interface EngineOptions {
@@ -67,16 +38,10 @@ export interface EngineOptions {
   scenario?: ScenarioId;
 }
 
-/**
- * A scheduled disturbance. It is active in [fromSeconds, toSeconds), or until the
- * end of the shift when toSeconds is null. Each event opens exactly one incident
- * when it becomes active and resolves it at toSeconds.
- */
 export interface ScenarioEvent {
   readonly id: string;
   readonly stationId: StationId;
   readonly kind: 'slowdown' | 'stop';
-  /** Cycle time multiplier for slowdowns (1.8 means 80% longer cycle). Ignored for stops. */
   readonly cycleFactor: number;
   readonly fromSeconds: number;
   readonly toSeconds: number | null;
@@ -126,7 +91,6 @@ export const SCENARIO_EVENTS: Readonly<Record<ScenarioId, readonly ScenarioEvent
   ],
 };
 
-/** Mutable per-station state. Internal; read it only through getSnapshot. */
 export interface EngineStationState {
   readonly def: StationDefinition;
   queue: number;
@@ -140,9 +104,18 @@ export interface EngineStationState {
   stopped: boolean;
   cycleFactor: number;
   capacityMultiplier: number;
+  activeVehicleId: string | null;
 }
 
-/** Engine state. Treat it as opaque: use advanceEngine and getSnapshot. */
+export interface EngineVehicle {
+  id: string;
+  serial: number;
+  distance: number;
+  stageIndex: number;
+  actualLastSpeed: number;
+  outcome: 'pending' | 'good' | 'rejected';
+}
+
 export interface Engine {
   readonly scenario: ScenarioId;
   readonly seed: number;
@@ -156,6 +129,7 @@ export interface Engine {
   readonly incidents: Incident[];
   readonly incidentIndexByEvent: Map<string, number>;
   readonly history: HistoryPoint[];
+  readonly vehicles: EngineVehicle[];
 }
 
 export function createEngine(options: EngineOptions = {}): Engine {
@@ -182,6 +156,7 @@ export function createEngine(options: EngineOptions = {}): Engine {
     stopped: false,
     cycleFactor: 1,
     capacityMultiplier: 1,
+    activeVehicleId: null,
   }));
 
   const engine: Engine = {
@@ -197,12 +172,21 @@ export function createEngine(options: EngineOptions = {}): Engine {
     incidents: [],
     incidentIndexByEvent: new Map<string, number>(),
     history: [],
+    vehicles: [],
   };
 
   const first = stations[0];
   if (first) {
-    first.queue = Math.min(INITIAL_QUEUED_UNITS, first.def.bufferCapacity);
-    engine.introducedUnits = first.queue;
+    first.queue = INITIAL_QUEUED_UNITS;
+    engine.introducedUnits = INITIAL_QUEUED_UNITS;
+    engine.vehicles.push({
+      id: `KA-0001`,
+      serial: 1,
+      distance: 0,
+      stageIndex: 0,
+      actualLastSpeed: 0,
+      outcome: 'pending',
+    });
   }
 
   applyConditions(engine);
@@ -210,7 +194,6 @@ export function createEngine(options: EngineOptions = {}): Engine {
   return engine;
 }
 
-/** Forks queues, progress, random generator and incident indexes without shared references. */
 export function cloneEngine(engine: Engine): Engine {
   return structuredClone(engine);
 }
@@ -231,22 +214,66 @@ export function advanceEngine(engine: Engine, seconds: number): void {
 export function getSnapshot(engine: Engine): PlantSnapshot {
   const elapsed = engine.elapsedSeconds;
   const hours = elapsed / SECONDS_PER_HOUR;
-  const stations: StationSnapshot[] = engine.stations.map((st) => ({
-    id: st.def.id,
-    name: st.def.name,
-    status: stationStatus(st),
-    inputQueue: st.queue,
-    bufferCapacity: st.def.bufferCapacity,
-    inProcess: st.inProcess,
-    progress: st.inProcess ? clamp(st.workDone / st.workRequired, 0, 1) : 0,
-    cycleSeconds: effectiveCycleSeconds(st),
-    completed: st.completed,
-    utilizationPercent: elapsed > 0 ? round2(clamp((st.busySeconds / elapsed) * 100, 0, 100)) : 0,
-    downtimeSeconds: st.downtimeSeconds,
-    throughputPerHour: elapsed > 0 ? round2(st.completed / hours) : 0,
-  }));
+
+  const stations: StationSnapshot[] = engine.stations.map((st, i) => {
+    const assigned = engine.vehicles.filter(v => v.stageIndex === i && v.id !== st.activeVehicleId);
+    const queuedUnits = assigned.filter(v => v.actualLastSpeed === 0).length;
+    const arrivingUnits = assigned.filter(v => v.actualLastSpeed > 0).length;
+
+    return {
+      id: st.def.id,
+      name: st.def.name,
+      status: stationStatus(st),
+      inputQueue: st.queue,
+      queuedUnits,
+      arrivingUnits,
+      bufferCapacity: st.def.bufferCapacity,
+      inProcess: st.inProcess,
+      progress: st.inProcess ? clamp(st.workDone / st.workRequired, 0, 1) : 0,
+      cycleSeconds: effectiveCycleSeconds(st),
+      completed: st.completed,
+      utilizationPercent: elapsed > 0 ? round2(clamp((st.busySeconds / elapsed) * 100, 0, 100)) : 0,
+      downtimeSeconds: st.downtimeSeconds,
+      throughputPerHour: elapsed > 0 ? round2(st.completed / hours) : 0,
+    };
+  });
+
   const finished = engine.goodUnits + engine.rejectedUnits;
   const wip = workInProgress(engine);
+
+  const conveyor: ConveyorSnapshot = {
+    length: CONVEYOR_SPEC.length,
+    stationDistances: [...CONVEYOR_SPEC.stationDistances],
+    nominalSpeed: CONVEYOR_SPEC.speed,
+    minSpacing: CONVEYOR_SPEC.minSpacing,
+    vehicles: engine.vehicles.map(v => {
+      let appearance: 'body' | 'painted' | 'assembled' = 'body';
+      if (v.stageIndex >= 3) appearance = 'assembled';
+      else if (v.stageIndex >= 2) appearance = 'painted';
+
+      const state = v.actualLastSpeed > 0 ? 'moving' :
+                    engine.stations.some(st => st.activeVehicleId === v.id) ?
+                      (engine.stations.find(st => st.activeVehicleId === v.id)!.finished ? 'blocked' : 'processing') :
+                    'queued';
+
+      let stage: StationId | 'outbound' = 'outbound';
+      if (v.stageIndex < STATIONS.length) {
+        stage = STATIONS[v.stageIndex].id;
+      }
+
+      return {
+        id: v.id,
+        serial: v.serial,
+        distance: v.distance,
+        speed: v.actualLastSpeed,
+        stage,
+        state,
+        appearance,
+        outcome: v.outcome
+      };
+    })
+  };
+
   return {
     scenario: engine.scenario,
     elapsedSeconds: elapsed,
@@ -263,17 +290,13 @@ export function getSnapshot(engine: Engine): PlantSnapshot {
     stations,
     incidents: engine.incidents.map((incident) => ({ ...incident })),
     history: engine.history.map((point) => ({ ...point })),
+    conveyor,
   };
 }
 
 function tick(engine: Engine): void {
-  const { stations } = engine;
-
-  // 1. load (matters for the initial state and right after a stop ends)
-  loadStations(stations);
-
-  // 2. work: at most one second of work per station
-  for (const st of stations) {
+  // 1. Work on currently loaded stations
+  for (const st of engine.stations) {
     if (st.stopped) {
       st.downtimeSeconds += 1;
       continue;
@@ -288,53 +311,132 @@ function tick(engine: Engine): void {
     }
   }
 
-  // 3. move: last station first so space freed downstream can be used this tick
-  for (let i = stations.length - 1; i >= 0; i -= 1) {
-    const st = stations[i];
-    if (!st || st.stopped || !st.inProcess || !st.finished) continue;
-    const next = stations[i + 1];
-    if (next) {
-      if (next.queue >= next.def.bufferCapacity) continue; // blocked, waits at progress 1
-      next.queue += 1;
-    } else if (nextRandom(engine.rng) < QUALITY_REJECT_RATE) {
-      engine.rejectedUnits += 1;
-    } else {
-      engine.goodUnits += 1;
+  // 2. Try to release finished vehicles
+  for (let i = engine.stations.length - 1; i >= 0; i--) {
+    const st = engine.stations[i];
+    if (st.stopped || !st.inProcess || !st.finished) continue;
+
+    const activeId = st.activeVehicleId;
+    const v = engine.vehicles.find(v => v.id === activeId);
+    if (!v) continue;
+
+    const nextStage = v.stageIndex + 1;
+    let canRelease = true;
+    if (nextStage < engine.stations.length) {
+      const nextSt = engine.stations[nextStage];
+      const assignedToNext = engine.vehicles.filter(x => x.stageIndex === nextStage && x.id !== nextSt.activeVehicleId).length;
+      if (assignedToNext >= nextSt.def.bufferCapacity) {
+        canRelease = false;
+      }
     }
-    st.completed += 1;
-    st.inProcess = false;
-    st.finished = false;
-    st.workDone = 0;
+
+    if (canRelease) {
+      const vIndex = engine.vehicles.indexOf(v);
+      let leaderDist = Infinity;
+      if (vIndex > 0) {
+        leaderDist = engine.vehicles[vIndex - 1].distance;
+      }
+      if (leaderDist - CONVEYOR_SPEC.minSpacing >= v.distance + CONVEYOR_SPEC.speed) {
+        st.completed += 1;
+        st.inProcess = false;
+        st.finished = false;
+        st.workDone = 0;
+        st.activeVehicleId = null;
+
+        v.stageIndex = nextStage;
+        if (nextStage === engine.stations.length) {
+          v.outcome = nextRandom(engine.rng) < QUALITY_REJECT_RATE ? 'rejected' : 'good';
+        }
+      }
+    }
   }
 
-  // 4. supply
+  // 3. Move vehicles
+  for (let i = 0; i < engine.vehicles.length; i++) {
+    const v = engine.vehicles[i];
+    let maxDist = v.distance + CONVEYOR_SPEC.speed;
+
+    if (i > 0) {
+      const leader = engine.vehicles[i - 1];
+      maxDist = Math.min(maxDist, leader.distance - CONVEYOR_SPEC.minSpacing);
+    }
+
+    if (v.stageIndex < engine.stations.length) {
+      const stopDist = CONVEYOR_SPEC.stationDistances[v.stageIndex];
+      maxDist = Math.min(maxDist, stopDist);
+    } else {
+      maxDist = Math.min(maxDist, CONVEYOR_SPEC.length);
+    }
+
+    const moved = Math.max(0, maxDist - v.distance);
+    v.distance += moved;
+    v.actualLastSpeed = moved;
+  }
+
+  // 4. Load stations
+  for (let i = 0; i < engine.stations.length; i++) {
+    const st = engine.stations[i];
+    if (!st.stopped && !st.inProcess) {
+      const stopDist = CONVEYOR_SPEC.stationDistances[i];
+      const v = engine.vehicles.find(v => v.stageIndex === i && v.distance === stopDist);
+      if (v) {
+        st.inProcess = true;
+        st.finished = false;
+        st.workDone = 0;
+        st.activeVehicleId = v.id;
+      }
+    }
+  }
+
+  // 5. Exit outbound vehicles
+  while (engine.vehicles.length > 0) {
+    const v = engine.vehicles[0];
+    if (v.distance === CONVEYOR_SPEC.length) {
+      if (v.outcome === 'good') {
+        engine.goodUnits += 1;
+      } else if (v.outcome === 'rejected') {
+        engine.rejectedUnits += 1;
+      }
+      engine.vehicles.shift();
+    } else {
+      break;
+    }
+  }
+
+  // 6. Supply new vehicle
   const nextElapsed = engine.elapsedSeconds + 1;
-  const first = stations[0];
-  if (first && nextElapsed % SUPPLY_INTERVAL_SECONDS === 0 && first.queue < first.def.bufferCapacity) {
-    first.queue += 1;
-    engine.introducedUnits += 1;
+  if (nextElapsed % SUPPLY_INTERVAL_SECONDS === 0) {
+    const firstSt = engine.stations[0];
+    const assignedToFirst = engine.vehicles.filter(x => x.stageIndex === 0 && x.id !== firstSt.activeVehicleId).length;
+    if (assignedToFirst < firstSt.def.bufferCapacity) {
+      const clearance = engine.vehicles.length === 0 ? Infinity : engine.vehicles[engine.vehicles.length - 1].distance;
+      if (clearance >= CONVEYOR_SPEC.minSpacing) {
+        engine.introducedUnits += 1;
+        const serial = engine.introducedUnits;
+        engine.vehicles.push({
+          id: `KA-${String(serial).padStart(4, '0')}`,
+          serial,
+          distance: 0,
+          stageIndex: 0,
+          actualLastSpeed: 0,
+          outcome: 'pending',
+        });
+      }
+    }
   }
 
-  // 5. load again so freshly transferred units start in the next second
-  loadStations(stations);
+  // 7. Update derived queues
+  for (let i = 0; i < engine.stations.length; i++) {
+    const st = engine.stations[i];
+    const assigned = engine.vehicles.filter(x => x.stageIndex === i).length;
+    st.queue = st.inProcess ? assigned - 1 : assigned;
+  }
 
   engine.elapsedSeconds = nextElapsed;
   applyConditions(engine);
   recordHistory(engine);
 }
 
-function loadStations(stations: EngineStationState[]): void {
-  for (const st of stations) {
-    if (!st.stopped && !st.inProcess && st.queue > 0) {
-      st.queue -= 1;
-      st.inProcess = true;
-      st.finished = false;
-      st.workDone = 0;
-    }
-  }
-}
-
-/** Applies the scenario conditions for the current elapsed second and updates incidents. */
 export function applyConditions(engine: Engine): void {
   const t = engine.elapsedSeconds;
   for (const st of engine.stations) {
@@ -389,14 +491,9 @@ function historyPoint(engine: Engine): HistoryPoint {
 }
 
 function workInProgress(engine: Engine): number {
-  let wip = 0;
-  for (const st of engine.stations) {
-    wip += st.queue + (st.inProcess ? 1 : 0);
-  }
-  return wip;
+  return engine.vehicles.length;
 }
 
-/** Precedence: stopped > blocked > warning (affected and actually working) > running > idle. */
 function stationStatus(st: EngineStationState): StationStatus {
   if (st.stopped) return 'stopped';
   if (st.inProcess && st.finished) return 'blocked';
@@ -412,12 +509,6 @@ function effectiveCycleSeconds(st: EngineStationState): number {
   return Math.round(st.workRequired / workRate(st));
 }
 
-/**
- * Naive current-rate forecast: good units so far scaled to the full shift. It uses
- * only the past (no knowledge of scheduled scenario events). The result is clamped
- * between the units already produced and a physical ceiling: current WIP plus what
- * the nominal bottleneck could still finish in the remaining time.
- */
 function forecastUnits(engine: Engine, wip: number): number {
   const elapsed = engine.elapsedSeconds;
   const good = engine.goodUnits;

@@ -41,8 +41,10 @@ function violations(s: PlantSnapshot): string[] {
     queued += st.inputQueue;
     processing += st.inProcess ? 1 : 0;
   }
-  check(upstream === s.goodUnits + s.rejectedUnits, 'last station output != good + rejected');
-  check(s.wip === queued + processing, 'wip != queued + in process');
+  const outbound = s.conveyor.vehicles.filter(vehicle => vehicle.stage === 'outbound').length;
+  check(upstream === s.goodUnits + s.rejectedUnits + outbound, 'quality output != departed + outbound');
+  check(s.wip === queued + processing + outbound, 'wip != buffers + processing + outbound');
+  check(s.wip === s.conveyor.vehicles.length, 'active vehicle identities do not match wip');
   if (s.goodUnits + s.rejectedUnits === 0) {
     check(s.qualityPercent === null, 'quality must be null before first finished car');
   } else {
@@ -80,9 +82,14 @@ describe('initial state', () => {
     expect(violations(s)).toEqual([]);
   });
 
-  it('visibly starts processing as soon as time advances', () => {
+  it('moves the first body to welding before starting its processing cycle', () => {
     const engine = createEngine();
     advanceEngine(engine, 1);
+    const approaching = getSnapshot(engine);
+    expect(approaching.conveyor.vehicles[0].distance).toBe(0.5);
+    expect(stationOf(approaching, 'welding').inProcess).toBe(false);
+    expect(stationOf(approaching, 'welding').arrivingUnits).toBe(1);
+    advanceEngine(engine, 80);
     const welding = stationOf(getSnapshot(engine), 'welding');
     expect(welding.inProcess).toBe(true);
     expect(welding.status).toBe('running');
