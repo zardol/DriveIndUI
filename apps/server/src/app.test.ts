@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildApp } from './app.js';
 import { SessionStore } from './sessions.js';
-import type { SessionSnapshot } from '@kosta/shared';
+import type { SessionSnapshot, SessionComparison } from '@kosta/shared';
+import { advanceEngine, compareEngine, createEngine } from '@kosta/simulation';
 
 const apps: Awaited<ReturnType<typeof buildApp>>[] = [];
 afterEach(async () => { await Promise.all(apps.splice(0).map(app => app.close())); });
@@ -16,6 +17,32 @@ async function setup() {
 }
 
 describe('session API', () => {
+  it('compares exact current state without changing the session and increments reset revisions', async () => {
+    const { app, create, advance } = await setup();
+    const s = await create();
+    const url = `/api/sessions/${s.sessionId}`;
+    await app.inject({ method: 'POST', url: `${url}/control`, payload: { action: 'setScenario', scenario: 'equipment' } });
+    advance(4000);
+    const before = (await app.inject(url)).json<SessionSnapshot>();
+    const options = { maintenanceMinutes: 5, reserveSetupMinutes: 0 } as const;
+    const response = await app.inject({ method: 'POST', url: `${url}/comparison`, payload: options });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers['cache-control']).toBe('no-store');
+    const engine = createEngine({ scenario: 'equipment' }); advanceEngine(engine, 240);
+    expect(response.json<SessionComparison>()).toEqual({ ...compareEngine(engine, options), sessionId: s.sessionId, revision: 1 });
+    expect((await app.inject(url)).json()).toEqual(before);
+    const reset = (await app.inject({ method: 'POST', url: `${url}/control`, payload: { action: 'reset' } })).json();
+    expect(reset.revision).toBe(2);
+  });
+
+  it('rejects invalid comparison parameters and missing sessions', async () => {
+    const { app, create } = await setup();
+    const s = await create();
+    for (const payload of [{}, { maintenanceMinutes: -5, reserveSetupMinutes: 0 }, { maintenanceMinutes: 5, reserveSetupMinutes: 1 }, { maintenanceMinutes: 5, reserveSetupMinutes: 0, extra: true }]) {
+      expect((await app.inject({ method: 'POST', url: `/api/sessions/${s.sessionId}/comparison`, payload })).statusCode).toBe(400);
+    }
+    expect((await app.inject({ method: 'POST', url: '/api/sessions/missing/comparison', payload: { maintenanceMinutes: 5, reserveSetupMinutes: 0 } })).statusCode).toBe(404);
+  });
   it('creates independent running sessions and applies commands only to their owner session', async () => {
     const { app, create, advance } = await setup();
     const a = await create(); const b = await create();

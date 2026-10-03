@@ -3,6 +3,21 @@ import { BrowserSession } from './browserSession';
 import { createEngine, advanceEngine, getSnapshot } from '@kosta/simulation';
 
 describe('BrowserSession', () => {
+  it('forks current state without sharing mutable engine data and identifies resets at the same time', () => {
+    let now = 0;
+    const session = new BrowserSession({ now: () => now, id: 'fork' });
+    now = 2000;
+    const fork = session.fork();
+    expect(fork.engine.elapsedSeconds).toBe(120);
+    expect(fork.revision).toBe(0);
+    advanceEngine(fork.engine, 28_800);
+    fork.engine.incidents.push({ id: 'injected', stationId: 'painting', severity: 'critical', title: '', description: '', startedAtSeconds: 0, resolvedAtSeconds: null });
+    expect(session.snapshot()).toMatchObject({ elapsedSeconds: 120, goodUnits: 0, incidents: [] });
+    expect(session.control({ action: 'reset' })).toMatchObject({ elapsedSeconds: 0, revision: 1 });
+    expect(session.control({ action: 'reset' })).toMatchObject({ elapsedSeconds: 0, revision: 2 });
+    expect(session.control({ action: 'setScenario', scenario: 'equipment' })).toMatchObject({ revision: 3 });
+    expect(session.control({ action: 'pause' }).revision).toBe(3);
+  });
   it.each(['normal', 'equipment', 'bottleneck'] as const)('matches the complete engine trajectory for %s', (scenario) => {
     let now = 0;
     const session = new BrowserSession({ now: () => now, id: 'equivalence' });

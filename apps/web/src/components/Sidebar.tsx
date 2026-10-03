@@ -1,4 +1,4 @@
-import { Activity, Bell, Factory, Info, LayoutDashboard, Workflow } from 'lucide-react';
+import { Activity, Bell, Factory, Info, LayoutDashboard, Workflow, GitCompareArrows } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -14,6 +14,7 @@ const SECTIONS: readonly SectionLink[] = [
   { id: 'flow', label: 'Линия', title: 'Схема линии', Icon: Workflow },
   { id: 'production', label: 'План', title: 'Выпуск: факт и план', Icon: Activity },
   { id: 'incidents', label: 'События', title: 'Хронология инцидентов', Icon: Bell },
+  { id: 'decisions', label: 'Решения', title: 'Сравнение решений', Icon: GitCompareArrows },
   { id: 'legend', label: 'Легенда', title: 'Легенда и пояснения', Icon: Info },
 ];
 

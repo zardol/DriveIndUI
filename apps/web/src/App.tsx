@@ -15,6 +15,7 @@ import { useSession } from './useSession';
 import { ShiftFocus } from './components/ShiftFocus';
 import { BROWSER_MODE } from './runtimeMode';
 import './stage2-layout.css';
+import { ComparisonSection } from './components/ComparisonSection';
 
 const ProductionChart = lazy(() => import('./components/ProductionChart').then((module) => ({ default: module.ProductionChart })));
 
@@ -105,6 +106,8 @@ export default function App() {
                   </section>
                 </div>
               </div>
+
+              <ComparisonSection key={`${snapshot.sessionId}:${snapshot.revision}`} snapshot={snapshot} disabled={stale || session.pending} />
 
               <details id='legend' className='section card legend-disclosure'>
                 <summary>Как читать показатели и схему</summary>

@@ -139,6 +139,7 @@ export interface EngineStationState {
   downtimeSeconds: number;
   stopped: boolean;
   cycleFactor: number;
+  capacityMultiplier: number;
 }
 
 /** Engine state. Treat it as opaque: use advanceEngine and getSnapshot. */
@@ -180,6 +181,7 @@ export function createEngine(options: EngineOptions = {}): Engine {
     downtimeSeconds: 0,
     stopped: false,
     cycleFactor: 1,
+    capacityMultiplier: 1,
   }));
 
   const engine: Engine = {
@@ -206,6 +208,11 @@ export function createEngine(options: EngineOptions = {}): Engine {
   applyConditions(engine);
   engine.history.push(historyPoint(engine));
   return engine;
+}
+
+/** Forks queues, progress, random generator and incident indexes without shared references. */
+export function cloneEngine(engine: Engine): Engine {
+  return structuredClone(engine);
 }
 
 export function advanceEngine(engine: Engine, seconds: number): void {
@@ -328,7 +335,7 @@ function loadStations(stations: EngineStationState[]): void {
 }
 
 /** Applies the scenario conditions for the current elapsed second and updates incidents. */
-function applyConditions(engine: Engine): void {
+export function applyConditions(engine: Engine): void {
   const t = engine.elapsedSeconds;
   for (const st of engine.stations) {
     st.stopped = false;
@@ -398,7 +405,7 @@ function stationStatus(st: EngineStationState): StationStatus {
 }
 
 function workRate(st: EngineStationState): number {
-  return Math.max(1, Math.round(WORK_UNITS_PER_SECOND / st.cycleFactor));
+  return Math.max(1, Math.round(WORK_UNITS_PER_SECOND * st.capacityMultiplier / st.cycleFactor));
 }
 
 function effectiveCycleSeconds(st: EngineStationState): number {
