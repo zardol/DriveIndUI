@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { ClockCard } from './components/ClockCard';
 import { ControlBar } from './components/ControlBar';
-import { FlowDiagram } from './components/FlowDiagram';
+import { FactoryView } from './components/FactoryView';
 import { ForecastCard } from './components/ForecastCard';
 import { IncidentTimeline } from './components/IncidentTimeline';
 import { KpiGrid } from './components/KpiGrid';
@@ -86,9 +86,10 @@ export default function App() {
                       Выберите оборудование, чтобы открыть его показатели.
                     </p>
                   </div>
-                  <span className='pill pill--neutral'>Поток слева направо</span>
+                  <span className='pill pill--neutral'>Учебная модель цеха</span>
                 </div>
-                <FlowDiagram snapshot={snapshot} selected={selected} onSelect={selectStation} animate={animate} stale={stale} />
+                <FactoryView snapshot={snapshot} selected={selected} onSelect={selectStation} animate={animate} stale={stale}
+                  onTogglePlayback={() => session.sendCommand({ action: snapshot.running ? 'pause' : 'play' })} controlsDisabled={stale || session.pending} />
                 <details className='station-disclosure' open={detailsOpen} onToggle={(event) => setDetailsOpen(event.currentTarget.open)}>
                   <summary>Показатели участка · {snapshot.stations.find((station) => station.id === selected)?.name}</summary>
                   <StationDetails snapshot={snapshot} selected={selected} onSelect={selectStation} />

@@ -7,6 +7,7 @@ $taskPublic = Join-Path $taskBundle 'public'
 New-Item -ItemType Directory -Path $taskPublic -Force | Out-Null
 Copy-Item -Path (Join-Path $taskBuild '*') -Destination $taskPublic -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'serve-demo.mjs') -Destination $taskBundle
+Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/layout-example.json') -Destination $taskBundle
 @'
 @echo off
 cd /d "%~dp0"
@@ -23,6 +24,9 @@ KostaAllur — офлайн-демонстрация
 Окно сервера должно оставаться открытым; Ctrl+C останавливает сервер.
 
 Все данные синтетические. Обновление страницы начинает новую смену.
+3D-цех работает без интернета: камера, выбор оборудования, пауза и экономная графика.
+При проблемах с графикой выберите «2D-схема».
+layout-example.json — шаблон локальной схемы. Загрузка меняет размещение, а не расчёты.
 Штатная работа: первый автомобиль примерно через 18 секунд при скорости ×60.
 Сбой оборудования: предупреждение на 10-й минуте модели, остановка на 20-й, восстановление на 35-й.
 Узкое место: с 10-й минуты модели цикл сборки увеличивается вдвое, очередь постепенно растёт.
