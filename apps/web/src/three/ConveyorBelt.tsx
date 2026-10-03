@@ -430,7 +430,8 @@ export function ConveyorBelt({
     if (!animate || !rollerMeshRef.current || baseQuats.current.length < numRollers) return;
 
     const dt = Math.min(delta, 0.1);
-    const mult = speed <= 1 ? 1 : speed <= 10 ? 2.5 : 5.0;
+    // Visual drive cue; compress high playback rates to avoid strobing.
+    const mult = Math.min(5, Math.max(0.1, Math.sqrt(speed)));
     const rotDelta = dt * 6.5 * mult;
 
     const p = phases.current;

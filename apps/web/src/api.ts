@@ -1,7 +1,7 @@
 import type { ApiError, ControlCommand, SessionSnapshot } from './types';
 import type { BrowserSession } from './browserSession';
 import { BROWSER_MODE } from './runtimeMode';
-import type { ComparisonOptions, SessionComparison } from '@kosta/shared';
+import { parseProductionConfig, type ComparisonOptions, type SessionComparison } from '@kosta/shared';
 
 const SESSION_STORAGE_KEY = BROWSER_MODE ? 'kostaallur.browserSessionId' : 'kostaallur.sessionId';
 const REQUEST_TIMEOUT_MS = 8000;
@@ -147,6 +147,7 @@ function parseSnapshot(value: unknown): SessionSnapshot {
       typeof v.running === 'boolean' &&
       typeof v.elapsedSeconds === 'number' &&
       typeof v.shiftSeconds === 'number' &&
+      parseProductionConfig(v.config).ok &&
       Array.isArray(v.stations) &&
       typeof v.conveyor === 'object' && v.conveyor !== null &&
       Array.isArray((v.conveyor as Record<string, unknown>).vehicles) &&

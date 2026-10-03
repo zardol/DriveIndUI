@@ -16,6 +16,7 @@ import { ShiftFocus } from './components/ShiftFocus';
 import { BROWSER_MODE } from './runtimeMode';
 import './stage2-layout.css';
 import { ComparisonSection } from './components/ComparisonSection';
+import { DataWorkspace, type WorkspaceMode } from './components/DataWorkspace';
 
 const ProductionChart = lazy(() => import('./components/ProductionChart').then((module) => ({ default: module.ProductionChart })));
 
@@ -24,17 +25,19 @@ export default function App() {
   const { snapshot, connection } = session;
   const [selected, setSelected] = useState<StationId>('welding');
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [mode, setMode] = useState<WorkspaceMode>('simulation');
   const selectStation = (id: StationId) => { setSelected(id); setDetailsOpen(true); };
 
   const stale = connection === 'lost';
   // Анимация схемы допустима только пока симуляция идёт и связь с сервером есть.
-  const animate = snapshot !== null && snapshot.running && connection === 'online';
+  const animate = mode === 'simulation' && snapshot !== null && snapshot.running && connection === 'online';
 
   return (
     <div className='app stage2'>
-      <Sidebar ready={snapshot !== null} />
+      <Sidebar ready={snapshot !== null} historyMode={mode === 'history'} />
       <div className='main'>
-        <TopBar connection={connection} sessionId={snapshot?.sessionId ?? null} />
+        <TopBar connection={connection} sessionId={snapshot?.sessionId ?? null}
+          dataLabel={mode === 'history' ? 'История из файла' : snapshot?.config.source.kind === 'provided' ? 'Сценарный расчёт' : 'Синтетическая модель'} />
         <main className='content'>
           {snapshot === null ? (
             connection === 'lost' ? (
@@ -60,9 +63,13 @@ export default function App() {
                     От кузова до готового автомобиля: выпуск, загрузка и причины задержек.
                   </p>
                 </div>
-                <ClockCard snapshot={snapshot} stale={stale} />
+                {mode === 'simulation' && <ClockCard snapshot={snapshot} stale={stale} />}
               </section>
 
+              <DataWorkspace snapshot={snapshot} mode={mode} pending={session.pending} offline={stale} onCommand={session.sendCommand}
+                onModeChange={next => { if (next === 'history' && snapshot.running) session.sendCommand({ action: 'pause' }); setMode(next); }} />
+
+              <div className='simulation-workspace' hidden={mode !== 'simulation'}>
               <ControlBar
                 snapshot={snapshot}
                 pending={session.pending}
@@ -116,9 +123,10 @@ export default function App() {
               </details>
 
               <p className='footnote'>
-                Синтетические данные · условная схема производства · время модельное.
+                {snapshot.config.source.kind === 'synthetic' ? 'Синтетические данные' : 'Сценарный расчёт по загруженным параметрам'} · условная схема производства · время модельное.
                 {BROWSER_MODE && ' Симуляция выполняется на вашем устройстве; обновление страницы начинает новую смену.'}
               </p>
+              </div>
             </>
           )}
         </main>

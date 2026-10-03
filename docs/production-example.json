@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "name": "Учебная линия",
+  "source": {
+    "kind": "synthetic",
+    "label": "Демонстрационные параметры"
+  },
+  "shiftSeconds": 28800,
+  "shiftPlan": 70,
+  "supplyIntervalSeconds": 240,
+  "rejectRate": 0.03,
+  "conveyorSpeed": 0.5,
+  "stations": [
+    {
+      "id": "welding",
+      "cycleSeconds": 240,
+      "bufferCapacity": 8
+    },
+    {
+      "id": "painting",
+      "cycleSeconds": 300,
+      "bufferCapacity": 8
+    },
+    {
+      "id": "assembly",
+      "cycleSeconds": 360,
+      "bufferCapacity": 8
+    },
+    {
+      "id": "quality",
+      "cycleSeconds": 180,
+      "bufferCapacity": 8
+    }
+  ]
+}

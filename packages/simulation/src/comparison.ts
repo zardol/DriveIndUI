@@ -1,10 +1,9 @@
-import { SHIFT_PLAN, SHIFT_SECONDS, advanceEngine, cloneEngine, applyConditions, getSnapshot } from './engine';
+import { advanceEngine, cloneEngine, applyConditions, getSnapshot } from './engine';
 import type { Engine, ScenarioEvent } from './engine';
 import type { ComparisonOptions, ComparisonResult, ComparisonAlternative, DecisionId } from '@kosta/shared';
 
 export function compareEngine(source: Engine, options: ComparisonOptions): ComparisonResult {
   if (!options) throw new RangeError('Options are required');
-
   const validMaintenance = [5, 10, 15, 20];
   const validReserve = [0, 5, 10, 15];
 
@@ -16,6 +15,8 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
   }
 
   const now = source.elapsedSeconds;
+  const shiftSeconds = source.config.shiftSeconds;
+  const shiftPlan = source.config.shiftPlan;
 
   const makeAlt = (
     id: DecisionId,
@@ -27,7 +28,6 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
     const downtime = eng.stations.reduce((sum, s) => sum + s.downtimeSeconds, 0);
     const baseDowntime = baseEng ? baseEng.stations.reduce((sum, s) => sum + s.downtimeSeconds, 0) : downtime;
     const baseUnits = baseEng ? baseEng.goodUnits : eng.goodUnits;
-
     const wip = getSnapshot(eng).wip;
 
     return {
@@ -39,7 +39,7 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
       rejectedUnits: eng.rejectedUnits,
       wip,
       downtimeSeconds: downtime,
-      planGap: eng.goodUnits - SHIFT_PLAN,
+      planGap: eng.goodUnits - shiftPlan,
       deltaGoodUnits: eng.goodUnits - baseUnits,
       deltaDowntimeSeconds: downtime - baseDowntime,
       history: eng.history.map(h => ({ ...h }))
@@ -47,10 +47,8 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
   };
 
   const alternatives: ComparisonAlternative[] = [];
-
-  // 1. Baseline
   const base = cloneEngine(source);
-  advanceEngine(base, SHIFT_SECONDS - now);
+  advanceEngine(base, shiftSeconds - now);
   alternatives.push(makeAlt(
     'baseline',
     'Продолжить смену',
@@ -59,18 +57,17 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
     base
   ));
 
-  // 2. Maintenance
   let maint = cloneEngine(source);
-  if (now < SHIFT_SECONDS) {
+  if (now < shiftSeconds) {
     const duration = options.maintenanceMinutes * 60;
     const newEvents: ScenarioEvent[] = [];
     for (const ev of maint.events) {
       if (ev.stationId === 'painting') {
-        if (ev.fromSeconds > now) continue; // A just-opened incident must still be resolved.
+        if (ev.fromSeconds > now) continue;
         if (ev.toSeconds === null || ev.toSeconds > now) {
-          newEvents.push({ ...ev, toSeconds: now }); // Truncate active
+          newEvents.push({ ...ev, toSeconds: now });
         } else {
-          newEvents.push(ev); // Keep historical
+          newEvents.push(ev);
         }
       } else {
         newEvents.push(ev);
@@ -90,7 +87,7 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
     maint = { ...maint, events: newEvents };
     applyConditions(maint);
   }
-  advanceEngine(maint, SHIFT_SECONDS - now);
+  advanceEngine(maint, shiftSeconds - now);
   alternatives.push(makeAlt(
     'maintenance',
     'Обслужить окраску',
@@ -99,10 +96,9 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
     base
   ));
 
-  // 3. Reserve
   let reserve = cloneEngine(source);
   const setupDuration = options.reserveSetupMinutes * 60;
-  if (now < SHIFT_SECONDS) {
+  if (now < shiftSeconds) {
     if (setupDuration > 0) {
       const newEvents: ScenarioEvent[] = [...reserve.events, {
         id: `reserve-setup-${now}`,
@@ -123,7 +119,7 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
     }
     applyConditions(reserve);
   }
-  advanceEngine(reserve, SHIFT_SECONDS - now);
+  advanceEngine(reserve, shiftSeconds - now);
   alternatives.push(makeAlt(
     'reserve',
     'Резерв мощности сборки',
@@ -136,8 +132,8 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
 
   const assumptions = [
     'Расписание событий сценария известно точно (без прогнозирования).',
-    'Вероятность брака каждого изделия — 3%. Последовательность случайных исходов одинакова во всех ветвях; фактическая доля зависит от числа завершённых изделий.',
-    'Буферы ограничены. Кузов предлагается каждые 240 секунд; при полном входном буфере поступление пропускается.',
+    `Вероятность брака каждого изделия — ${Number((source.config.rejectRate * 100).toFixed(4))}%. Последовательность случайных исходов одинакова во всех ветвях; фактическая доля зависит от числа завершённых изделий.`,
+    `Буферы ограничены. Кузов предлагается каждые ${source.config.supplyIntervalSeconds} секунд; при полном входном буфере поступление пропускается.`,
     'Экономические затраты на ремонт и резерв не учитываются.',
     'Резерв удваивает скорость обработки сборки. Это приближение мощности, а не модель двух параллельных постов. Сценарное замедление сборки сохраняется.',
     'Обслуживание гарантированно устраняет будущие отказы окрасочной установки до конца смены.'
@@ -146,8 +142,8 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
   return {
     scenario: source.scenario,
     fromSeconds: now,
-    toSeconds: SHIFT_SECONDS,
-    shiftPlan: SHIFT_PLAN,
+    toSeconds: shiftSeconds,
+    shiftPlan: shiftPlan,
     options: { ...options },
     assumptions,
     alternatives

@@ -114,7 +114,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
     {failed && <p className='plant-notice' role='status'>3D недоступно на этом устройстве. Открыта 2D-схема; расчёты и управление доступны.</p>}
     <div className='plant-fleet-stats' aria-label='Машины на конвейере'>
       <strong>В линии <b>{vehicles.length}</b></strong><span>В пути {movingCount}</span><span>На обработке {workingCount}</span><span>Ожидают {waitingCount}</span>
-      <small>Каждая машина учтена · буферы по 8 мест · без обгона</small>
+      <small>Каждая машина учтена · вместимость буферов задана конфигурацией · без обгона</small>
     </div>
     <div ref={viewport} className={mode === '3d' ? 'plant-viewport' : 'plant-flat'} aria-label={mode === '3d' ? 'Интерактивный трёхмерный цех' : 'Двумерная схема'} role='region'>
       {mode === '3d' ? <SceneBoundary onFailure={reportFailure} fallback={flat}>
@@ -157,7 +157,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
     </details>
     <details className='plant-layout'>
       <summary>Размещение участков · {layout.title}</summary>
-      <p>Можно загрузить расположение четырёх участков по шаблону. Файл читается на этом устройстве и меняет только 3D-размещение. Показатели пока остаются синтетическими; обновление страницы вернёт учебную схему.</p>
+      <p>Можно загрузить расположение четырёх участков по шаблону. Файл читается на этом устройстве и меняет только 3D-размещение. Показатели рассчитывает модель; обновление страницы вернёт учебную схему.</p>
       <div className='plant-layout-actions'>
         <button type='button' onClick={download}><Download size={14} />Шаблон схемы</button>
         <button type='button' onClick={() => fileInput.current?.click()}><Upload size={14} />Загрузить схему</button>

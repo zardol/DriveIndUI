@@ -1,4 +1,4 @@
-import { Activity, Bell, Factory, Info, LayoutDashboard, Workflow, GitCompareArrows } from 'lucide-react';
+import { Activity, Bell, Database, Factory, Info, LayoutDashboard, Workflow, GitCompareArrows } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -11,14 +11,15 @@ interface SectionLink {
 
 const SECTIONS: readonly SectionLink[] = [
   { id: 'overview', label: 'Обзор', title: 'Обзор и управление', Icon: LayoutDashboard },
+  { id: 'data', label: 'Данные', title: 'Данные и режим работы', Icon: Database },
   { id: 'flow', label: 'Линия', title: 'Схема линии', Icon: Workflow },
-  { id: 'production', label: 'План', title: 'Выпуск: факт и план', Icon: Activity },
+  { id: 'production', label: 'План', title: 'Расчёт выпуска и план', Icon: Activity },
   { id: 'incidents', label: 'События', title: 'Хронология инцидентов', Icon: Bell },
   { id: 'decisions', label: 'Решения', title: 'Сравнение решений', Icon: GitCompareArrows },
   { id: 'legend', label: 'Легенда', title: 'Легенда и пояснения', Icon: Info },
 ];
 
-function useActiveSection(enabled: boolean): string {
+function useActiveSection(enabled: boolean, historyMode: boolean): string {
   const [active, setActive] = useState<string>('overview');
 
   useEffect(() => {
@@ -37,13 +38,13 @@ function useActiveSection(enabled: boolean): string {
       if (element) observer.observe(element);
     }
     return () => observer.disconnect();
-  }, [enabled]);
+  }, [enabled, historyMode]);
 
   return active;
 }
 
-export function Sidebar({ ready }: { ready: boolean }) {
-  const active = useActiveSection(ready);
+export function Sidebar({ ready, historyMode }: { ready: boolean; historyMode: boolean }) {
+  const active = useActiveSection(ready, historyMode);
 
   return (
     <aside className='rail'>
@@ -52,7 +53,7 @@ export function Sidebar({ ready }: { ready: boolean }) {
       </div>
       <nav className='rail__nav' aria-label='Разделы панели'>
         <ul>
-          {SECTIONS.map(({ id, label, title, Icon }) => (
+          {SECTIONS.filter(section => !historyMode || section.id === 'overview' || section.id === 'data').map(({ id, label, title, Icon }) => (
             <li key={id}>
               <a
                 className='rail__link'

@@ -97,14 +97,23 @@ export class BrowserSession {
       case 'setScenario': {
         this.revision += 1;
         this.scenario = command.scenario;
-        this.engine = createEngine({ seed: 42, scenario: this.scenario });
+        this.engine = createEngine({ seed: 42, scenario: this.scenario, config: this.engine.config });
         this.remainder = 0;
         break;
       }
       case 'reset': {
         this.revision += 1;
-        this.engine = createEngine({ seed: 42, scenario: this.scenario });
+        this.engine = createEngine({ seed: 42, scenario: this.scenario, config: this.engine.config });
         this.remainder = 0;
+        break;
+      }
+      case 'setConfiguration': {
+        // Construct first: invalid input must leave the active configuration intact.
+        const next = createEngine({ seed: 42, scenario: this.scenario, config: command.config });
+        this.engine = next;
+        this.revision += 1;
+        this.remainder = 0;
+        this.running = false;
         break;
       }
     }

@@ -1,8 +1,34 @@
 import { describe, it, expect } from 'vitest';
 import { BrowserSession } from './browserSession';
 import { createEngine, advanceEngine, getSnapshot } from '@kosta/simulation';
+import { DEFAULT_PRODUCTION_CONFIG } from '@kosta/shared';
 
 describe('BrowserSession', () => {
+  it('applies an isolated configuration on pause and retains it across resets, scenarios and forks', () => {
+    let now = 0;
+    const session = new BrowserSession({ now: () => now, id: 'configured' });
+    session.control({ action: 'setSpeed', speed: 10 });
+    now = 5000;
+    const config = structuredClone(DEFAULT_PRODUCTION_CONFIG);
+    config.name = 'Короткая смена'; config.shiftSeconds = 61; config.shiftPlan = 4; config.conveyorSpeed = 0.3;
+    const applied = session.control({ action: 'setConfiguration', config });
+    expect(applied).toMatchObject({ revision: 1, elapsedSeconds: 0, running: false, speed: 10, config });
+    config.shiftPlan = 999;
+    applied.config.stations[0].cycleSeconds = 999;
+    now += 5000;
+    expect(session.snapshot()).toMatchObject({ elapsedSeconds: 0, shiftPlan: 4 });
+    expect(session.snapshot().config.stations[0].cycleSeconds).toBe(240);
+    expect(session.control({ action: 'reset' })).toMatchObject({ revision: 2, config: { shiftSeconds: 61, shiftPlan: 4 } });
+    expect(session.control({ action: 'setScenario', scenario: 'equipment' })).toMatchObject({ revision: 3, config: { shiftSeconds: 61 } });
+    const fork = session.fork(); fork.engine.config.shiftPlan = 500;
+    expect(session.snapshot().shiftPlan).toBe(4);
+    const before = session.snapshot();
+    expect(() => session.control({ action: 'setConfiguration', config: { ...config, conveyorSpeed: 0 } })).toThrow(RangeError);
+    expect(session.snapshot()).toEqual({ ...before, updatedAt: expect.any(String) });
+    session.control({ action: 'play' });
+    now += 5000; session.snapshot(); now += 5000;
+    expect(session.snapshot()).toMatchObject({ elapsedSeconds: 61, running: false, history: expect.arrayContaining([expect.objectContaining({ elapsedSeconds: 61, planUnits: 4 })]) });
+  });
   it('forks current state without sharing mutable engine data and identifies resets at the same time', () => {
     let now = 0;
     const session = new BrowserSession({ now: () => now, id: 'fork' });

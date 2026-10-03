@@ -8,6 +8,8 @@ New-Item -ItemType Directory -Path $taskPublic -Force | Out-Null
 Copy-Item -Path (Join-Path $taskBuild '*') -Destination $taskPublic -Recurse
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'serve-demo.mjs') -Destination $taskBundle
 Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/layout-example.json') -Destination $taskBundle
+Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/production-example.json') -Destination $taskBundle
+Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/history-synthetic-example.csv') -Destination $taskBundle
 @'
 @echo off
 cd /d "%~dp0"
@@ -23,7 +25,12 @@ KostaAllur — офлайн-демонстрация
 Откройте http://localhost:4175 в браузере. Интернет и npm install не требуются.
 Окно сервера должно оставаться открытым; Ctrl+C останавливает сервер.
 
-Все данные синтетические. Обновление страницы начинает новую смену.
+Встроенные данные и примеры синтетические. Обновление страницы начинает новую смену.
+В разделе «Данные и режим работы» можно загрузить параметры модели из production-example.json.
+Перед применением показан предпросмотр; применение начинает новую смену на паузе.
+Сброс и выбор сценария сохраняют конфигурацию, обновление страницы возвращает учебную.
+«История производства» открывает CSV отдельно от 3D; шаблон history-synthetic-example.csv.
+История обрабатывается на устройстве, не отправляется в сеть и исчезает при обновлении страницы.
 3D-цех работает без интернета: камера, выбор оборудования, пауза и экономная графика.
 При проблемах с графикой выберите «2D-схема».
 layout-example.json — шаблон локальной схемы. Загрузка меняет размещение, а не расчёты.

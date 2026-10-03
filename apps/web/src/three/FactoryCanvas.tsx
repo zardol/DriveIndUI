@@ -203,7 +203,7 @@ export default function FactoryCanvas(props: FactoryCanvasProps) {
     <LabelProjection anchors={anchors} labels={labels} />
     <CameraRig request={cameraRequest} layout={layout} route={route} motion={motion} />
     <FactoryFloor layout={layout} />
-    <ConveyorBelt route={route} vehicles={snapshot.conveyor.vehicles} animate={animate && !reducedMotion} speed={snapshot.speed} />
+    <ConveyorBelt route={route} vehicles={snapshot.conveyor.vehicles} animate={animate && !reducedMotion} speed={snapshot.speed * snapshot.conveyor.nominalSpeed / 0.5} />
     <ConveyorFleet route={route} vehicles={snapshot.conveyor.vehicles} motion={motion} selectedId={selectedVehicleId} onSelect={onSelectVehicle} />
     <Terminals layout={layout} />
     {layout.stations.map(placement => {
