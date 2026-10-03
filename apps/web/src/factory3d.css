@@ -1,0 +1,71 @@
+.plant-view { --plant-ink: #24483f; border-top: 1px solid #e2e7df; }
+.plant-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 20px; }
+.plant-switch, .plant-camera { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.plant-switch { padding: 3px; background: #edf0e9; border-radius: 10px; }
+.plant-view button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: 12px; color: var(--plant-ink); border: 1px solid #d4ded5; background: #fffef9; border-radius: 7px; padding: 8px 11px; cursor: pointer; }
+.plant-view button:focus-visible, .plant-view select:focus-visible, .plant-layout summary:focus-visible { outline: 3px solid #d68a32; outline-offset: 3px; }
+.plant-view button:hover:not(:disabled) { background: #e4eee6; }
+.plant-view button:disabled { cursor: not-allowed; opacity: .45; }
+.plant-switch button { background: transparent; border-color: transparent; font-weight: 650; }
+.plant-switch button[aria-pressed=true] { color: #fff; background: #245f52; box-shadow: 0 2px 5px #1b49341c; }
+.plant-viewport { height: 560px; position: relative; overflow: hidden; isolation: isolate; background: #e8ede6; }
+.plant-viewport canvas { touch-action: none; }
+.plant-label-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.plant-label-anchor { position: absolute; left: 0; top: 0; visibility: hidden; }
+.plant-label-anchor button { pointer-events: auto; }
+.plant-overlay { pointer-events: none; position: absolute; top: 20px; left: 24px; display: grid; gap: 4px; color: #35584d; padding: 12px 15px; border-radius: 10px; background: #f9fcf2d9; border: 1px solid #d6e1d5; z-index: 10; backdrop-filter: blur(6px); }
+.plant-overlay span { font-size: 9px; letter-spacing: .12em; font-weight: 700; }
+.plant-overlay strong { font-size: 19px; font-weight: 650; }
+.plant-overlay small { font-size: 10px; color: #6c7c73; }
+.plant-loading, .plant-error { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; color: #42695b; font-size: 13px; padding: 30px; text-align: center; }
+.plant-loading strong { font-size: 18px; }
+.plant-view .plant-label { display: grid; gap: 4px; white-space: nowrap; box-shadow: 0 3px 14px #233c3420; padding: 7px 10px; font-size: 12px; background: #fffef5ee; border-color: #c9d5c9; }
+.plant-view .plant-label.is-selected { border: 2px solid #266c5b; background: #f4fff7; }
+.plant-label span { display: flex; align-items: center; gap: 5px; font-weight: 700; }
+.plant-label i, .plant-station-dot { flex-shrink: 0; display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+.plant-label small { font-size: 9px; color: #5d7369; }
+.plant-terminal { background: #f8faeeed; padding: 6px 9px; border: 1px solid #bfcdbd; border-radius: 7px; white-space: nowrap; font-size: 11px; font-weight: 700; color: #40624e; text-align: center; pointer-events: none; }
+.plant-terminal small { display: block; font-size: 9px; margin-top: 3px; font-weight: 400; }
+.plant-overflow { font-size: 12px; border-radius: 4px; padding: 3px; background: #fff0c8; color: #754710; }
+.plant-bottom { display: flex; gap: 10px; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 10px 20px; background: #f1f4ec; border-top: 1px solid #dbe4d9; }
+.plant-bottom p { margin: 0; font-size: 11px; color: #617268; }
+.plant-bottom label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #526c5d; }
+.plant-bottom select { padding: 5px 8px; border-radius: 6px; border: 1px solid #cbd7c9; color: #355544; background: #fffff9; font: inherit; }
+.plant-stations { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; padding: 12px 20px; }
+.plant-view .plant-stations button { justify-content: flex-start; gap: 9px; text-align: left; padding: 10px 12px; }
+.plant-view .plant-stations button[aria-pressed=true] { background: #edf7ed; border-color: #598a70; }
+.plant-stations strong { display: block; font-size: 12px; }
+.plant-stations small { display: block; font-size: 10px; color: #68796d; margin-top: 4px; }
+.plant-stations b { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
+.plant-station-dot.is-running { background: #239982; }
+.plant-station-dot.is-idle { background: #829497; }
+.plant-station-dot.is-warning, .plant-station-dot.is-blocked { background: #d28a3a; }
+.plant-station-dot.is-stopped { background: #e05044; }
+.plant-layout { margin: 0 20px 12px; border: 1px solid #e2e6dc; border-radius: 8px; font-size: 12px; }
+.plant-layout summary { padding: 10px 12px; cursor: pointer; color: #506553; }
+.plant-layout p { padding: 0 12px; font-size: 12px; line-height: 1.6; max-width: 900px; }
+.plant-layout-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 12px; }
+.plant-file { display: none; }
+.plant-layout-error { color: #a43c32; }
+.plant-notice { margin: 6px 20px 12px; color: #6b705f; font-size: 12px; line-height: 1.5; }
+.plant-view.is-expanded { position: fixed; z-index: 60; inset: 16px; overflow: auto; background: #f7f8ef; border-radius: 14px; box-shadow: 0 0 0 30px #18382ca6; }
+.plant-view.is-expanded .plant-viewport { height: calc(100vh - 220px); min-height: 340px; }
+@media(max-width: 900px) { .plant-stations { grid-template-columns: repeat(2,minmax(0,1fr)); } .plant-overlay { padding: 8px 10px; top: 10px; left: 12px; } }
+@media(max-width: 600px) {
+  .plant-toolbar { padding: 10px; }
+  .plant-camera { gap: 4px; }
+  .plant-camera button { padding: 7px 8px; font-size: 11px; }
+  .plant-viewport { height: 430px; }
+  .plant-label:not(.is-selected), .plant-terminal { display: none !important; }
+  .plant-overlay strong { font-size: 14px; }
+  .plant-overlay small { display: none; }
+  .plant-bottom { padding: 10px; }
+  .plant-bottom p { max-width: 240px; line-height: 1.6; }
+  .plant-stations { padding: 10px; gap: 6px; }
+  .plant-view .plant-stations button { padding: 9px 6px; gap: 5px; }
+  .plant-stations strong { font-size: 11px; }
+  .plant-stations small { font-size: 9px; }
+  .plant-stations b { font-size: 10px; }
+  .plant-layout { margin: 0 10px 12px; }
+  .plant-view.is-expanded { inset: 6px; }
+}
