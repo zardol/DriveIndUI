@@ -1,7 +1,7 @@
 import { useRef, type RefObject } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { VehicleModel } from './VehicleModel';
+
 
 import type { StationSnapshot } from '@kosta/shared';
 
@@ -37,7 +37,7 @@ export function EquipmentModel({ station, animate, selected }: EquipmentModelPro
   const isActive = animate && station.inProcess && (station.status === 'running' || station.status === 'warning');
 
   // Refs for animated components
-  const rollersRef = useRef<THREE.Group>(null);
+
   const robot1Turntable = useRef<THREE.Group>(null);
   const robot1Shoulder = useRef<THREE.Group>(null);
   const robot1Forearm = useRef<THREE.Group>(null);
@@ -64,14 +64,6 @@ export function EquipmentModel({ station, animate, selected }: EquipmentModelPro
     const dt = Math.min(delta, 0.1);
     phaseRef.current += dt;
     const t = phaseRef.current;
-
-    // Rollers continuous spin
-    if (rollersRef.current) {
-      const count = rollersRef.current.children.length;
-      for (let i = 0; i < count; i++) {
-        rollersRef.current.children[i].rotation.y = t * 3.8;
-      }
-    }
 
     // Welding robots articulation
     if (robot1Turntable.current) robot1Turntable.current.rotation.y = Math.sin(t * 1.8) * 0.35 + 0.15;
@@ -119,53 +111,11 @@ export function EquipmentModel({ station, animate, selected }: EquipmentModelPro
   const isStopped = station.status === 'stopped';
   const isBlocked = station.status === 'blocked';
 
-  const carX = -0.8 + 1.6 * Math.max(0, Math.min(1, station.progress));
+  const carX = 0;
   const selectGlow = selected ? '#38bdf8' : '#334155';
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Conveyor Bed & Deck (Flow along X, bounds within x±3.5, z±2.6) */}
-      <mesh position={[0, 0.24, 0.76]} castShadow receiveShadow>
-        <boxGeometry args={[6.2, 0.14, 0.08]} />
-        <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.4} />
-      </mesh>
-      <mesh position={[0, 0.24, -0.76]} castShadow receiveShadow>
-        <boxGeometry args={[6.2, 0.14, 0.08]} />
-        <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.4} />
-      </mesh>
-      <mesh position={[0, 0.19, 0]} receiveShadow>
-        <boxGeometry args={[6.0, 0.04, 1.42]} />
-        <meshStandardMaterial color="#1e293b" metalness={0.5} roughness={0.8} />
-      </mesh>
-
-      {/* Conveyor Stanchion Legs */}
-      {[-2.6, -0.9, 0.9, 2.6].map((lx) => (
-        <group key={lx}>
-          <mesh position={[lx, 0.11, 0.72]} castShadow receiveShadow>
-            <boxGeometry args={[0.12, 0.22, 0.12]} />
-            <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.5} />
-          </mesh>
-          <mesh position={[lx, 0.11, -0.72]} castShadow receiveShadow>
-            <boxGeometry args={[0.12, 0.22, 0.12]} />
-            <meshStandardMaterial color="#1e293b" metalness={0.7} roughness={0.5} />
-          </mesh>
-          <mesh position={[lx, 0.08, 0]} receiveShadow>
-            <boxGeometry args={[0.08, 0.08, 1.36]} />
-            <meshStandardMaterial color="#334155" metalness={0.6} roughness={0.6} />
-          </mesh>
-        </group>
-      ))}
-
-      {/* Conveyor Rollers (Animated rotation) */}
-      <group ref={rollersRef}>
-        {[-2.5, -2.0, -1.5, -1.0, -0.5, 0, 0.5, 1.0, 1.5, 2.0, 2.5].map((rx, idx) => (
-          <mesh key={idx} position={[rx, 0.27, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
-            <cylinderGeometry args={[0.045, 0.045, 1.42, 12]} />
-            <meshStandardMaterial color="#64748b" metalness={0.8} roughness={0.3} />
-          </mesh>
-        ))}
-      </group>
-
       {/* Floor Guide Plates & Selection Highlight */}
       <mesh position={[0, 0.01, 1.15]} receiveShadow>
         <boxGeometry args={[6.2, 0.02, 0.14]} />
@@ -450,23 +400,6 @@ export function EquipmentModel({ station, animate, selected }: EquipmentModelPro
         </group>
       )}
 
-      {/* Main vehicle rendered ONLY when inProcess is true */}
-      {station.inProcess && (
-        <group position={[carX, 0.28, 0]}>
-          <VehicleModel
-            bodyOnly={station.id === 'welding'}
-            color={
-              station.id === 'welding'
-                ? '#848d98'
-                : station.id === 'painting'
-                ? '#0284c7'
-                : station.id === 'assembly'
-                ? '#0ea5e9'
-                : '#38bdf8'
-            }
-          />
-        </group>
-      )}
     </group>
   );
 }

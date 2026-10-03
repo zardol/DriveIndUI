@@ -1,4 +1,4 @@
-import { SHIFT_PLAN, SHIFT_SECONDS, advanceEngine, cloneEngine, applyConditions } from './engine';
+import { SHIFT_PLAN, SHIFT_SECONDS, advanceEngine, cloneEngine, applyConditions, getSnapshot } from './engine';
 import type { Engine, ScenarioEvent } from './engine';
 import type { ComparisonOptions, ComparisonResult, ComparisonAlternative, DecisionId } from '@kosta/shared';
 
@@ -28,8 +28,7 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
     const baseDowntime = baseEng ? baseEng.stations.reduce((sum, s) => sum + s.downtimeSeconds, 0) : downtime;
     const baseUnits = baseEng ? baseEng.goodUnits : eng.goodUnits;
 
-    let wip = 0;
-    for (const st of eng.stations) wip += st.queue + (st.inProcess ? 1 : 0);
+    const wip = getSnapshot(eng).wip;
 
     return {
       id,

@@ -148,6 +148,8 @@ function parseSnapshot(value: unknown): SessionSnapshot {
       typeof v.elapsedSeconds === 'number' &&
       typeof v.shiftSeconds === 'number' &&
       Array.isArray(v.stations) &&
+      typeof v.conveyor === 'object' && v.conveyor !== null &&
+      Array.isArray((v.conveyor as Record<string, unknown>).vehicles) &&
       Array.isArray(v.history) &&
       Array.isArray(v.incidents)
     ) {

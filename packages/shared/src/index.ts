@@ -29,6 +29,8 @@ export interface StationSnapshot {
   name: string;
   status: StationStatus;
   inputQueue: number;
+  queuedUnits: number; // stationary vehicles in the incoming buffer
+  arrivingUnits: number; // moving vehicles in the incoming buffer
   bufferCapacity: number;
   inProcess: boolean;
   progress: number; // 0..1; completed item may wait at 1 if downstream buffer is full
@@ -56,6 +58,34 @@ export interface HistoryPoint {
   wip: number;
 }
 
+/** The logical conveyor is independent of the uploaded display layout. */
+export const CONVEYOR_SPEC = {
+  segmentLength: 40,
+  speed: 0.5,
+  minSpacing: 4,
+  stationDistances: [40, 80, 120, 160],
+  length: 200,
+} as const;
+
+export interface ConveyorVehicleSnapshot {
+  id: string;
+  serial: number;
+  distance: number;
+  speed: number; // actual distance travelled during the last simulated second
+  stage: StationId | 'outbound';
+  state: 'moving' | 'queued' | 'processing' | 'blocked';
+  appearance: 'body' | 'painted' | 'assembled';
+  outcome: 'pending' | 'good' | 'rejected';
+}
+
+export interface ConveyorSnapshot {
+  length: number;
+  stationDistances: number[];
+  nominalSpeed: number;
+  minSpacing: number;
+  vehicles: ConveyorVehicleSnapshot[];
+}
+
 export interface PlantSnapshot {
   scenario: ScenarioId;
   elapsedSeconds: number;
@@ -72,6 +102,7 @@ export interface PlantSnapshot {
   stations: StationSnapshot[];
   incidents: Incident[];
   history: HistoryPoint[];
+  conveyor: ConveyorSnapshot;
 }
 
 export interface SessionSnapshot extends PlantSnapshot {

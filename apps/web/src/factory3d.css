@@ -46,10 +46,23 @@
 .plant-layout p { padding: 0 12px; font-size: 12px; line-height: 1.6; max-width: 900px; }
 .plant-layout-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 12px 12px; }
 .plant-file { display: none; }
+.plant-vehicle-card { position: absolute; top: 18px; right: 18px; max-width: 240px; pointer-events: none; display: grid; gap: 5px; padding: 10px 13px; background: #fff8e9ed; border: 1px solid #dcb967; border-radius: 9px; color: #63502b; }
+.plant-vehicle-card strong { font-size: 15px; font-variant-numeric: tabular-nums; }
+.plant-vehicle-card span, .plant-vehicle-card small { font-size: 11px; }
+.plant-fleet-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; padding: 12px 20px; border-top: 1px solid #dce4d7; color: #41604d; font-size: 12px; background: #eef3e8; }
+.plant-fleet-stats b { font-size: 19px; padding-left: 4px; }
+.plant-fleet-stats small { color: #6c7a69; margin-left: auto; font-size: 10px; }
+.plant-manifest { margin: 10px 20px; font-size: 12px; border: 1px solid #dbe3d6; border-radius: 8px; }
+.plant-manifest summary { padding: 10px 12px; cursor: pointer; color: #355f48; }
+.plant-manifest p { margin: 0; padding: 8px 12px; color: #677564; line-height: 1.5; }
+.plant-vehicle-list { display: grid; grid-template-columns: repeat(auto-fill,minmax(170px,1fr)); gap: 6px; padding: 8px 12px 12px; max-height: 280px; overflow: auto; }
+.plant-view .plant-vehicle-list button { display: grid; gap: 3px; text-align: left; justify-content: stretch; }
+.plant-vehicle-list button[aria-pressed=true] { border-color: #c29232; background: #fff5db; }
+.plant-vehicle-list small { color: #74816b; }
 .plant-layout-error { color: #a43c32; }
 .plant-notice { margin: 6px 20px 12px; color: #6b705f; font-size: 12px; line-height: 1.5; }
 .plant-view.is-expanded { position: fixed; z-index: 60; inset: 16px; overflow: auto; background: #f7f8ef; border-radius: 14px; box-shadow: 0 0 0 30px #18382ca6; }
-.plant-view.is-expanded .plant-viewport { height: calc(100vh - 220px); min-height: 340px; }
+.plant-view.is-expanded .plant-viewport { height: calc(100vh - 265px); min-height: 340px; }
 @media(max-width: 900px) { .plant-stations { grid-template-columns: repeat(2,minmax(0,1fr)); } .plant-overlay { padding: 8px 10px; top: 10px; left: 12px; } }
 @media(max-width: 600px) {
   .plant-toolbar { padding: 10px; }
@@ -59,6 +72,10 @@
   .plant-label:not(.is-selected), .plant-terminal { display: none !important; }
   .plant-overlay strong { font-size: 14px; }
   .plant-overlay small { display: none; }
+  .plant-vehicle-card { top: auto; bottom: 10px; right: 10px; max-width: 200px; }
+  .plant-fleet-stats { padding: 10px; gap: 8px 12px; font-size: 11px; }
+  .plant-fleet-stats small { margin-left: 0; }
+  .plant-manifest { margin: 10px; }
   .plant-bottom { padding: 10px; }
   .plant-bottom p { max-width: 240px; line-height: 1.6; }
   .plant-stations { padding: 10px; gap: 6px; }

@@ -19,16 +19,16 @@ export const DEFAULT_LAYOUT: FactoryLayout = {
   version: 1,
   title: 'Учебная схема цеха',
   units: 'relative',
-  floor: { width: 44, depth: 32 },
+  floor: { width: 100, depth: 96 },
   stations: [
-    { id: 'welding', position: [-5, -6], rotation: 0 },
-    { id: 'painting', position: [7, -6], rotation: 0 },
-    { id: 'assembly', position: [7, 7], rotation: 180 },
-    { id: 'quality', position: [-5, 7], rotation: 180 }
+    { id: 'welding', position: [28, -33], rotation: 0 },
+    { id: 'painting', position: [-28, -11], rotation: 180 },
+    { id: 'assembly', position: [28, 11], rotation: 0 },
+    { id: 'quality', position: [-28, 33], rotation: 180 }
   ],
   terminals: {
-    supply: [-16, -6],
-    finished: [-16, 7]
+    supply: [-44, -33],
+    finished: [8, 42]
   }
 };
 

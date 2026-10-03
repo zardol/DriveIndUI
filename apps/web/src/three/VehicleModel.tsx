@@ -14,7 +14,7 @@ function merge(parts: BufferGeometry[]): BufferGeometry {
 }
 
 /** Combine static pieces by material: a finished vehicle needs seven draw calls. */
-function vehicleGeometry(bodyOnly: boolean) {
+export function vehicleGeometry(bodyOnly: boolean) {
   const body = merge([
     box([2.85, 0.36, 1.28], [0, 0.38, 0]),
     box([0.95, 0.12, 1.22], [0.92, 0.52, 0]),
