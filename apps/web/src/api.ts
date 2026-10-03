@@ -1,7 +1,14 @@
 import type { ApiError, ControlCommand, SessionSnapshot } from './types';
+import type { BrowserSession } from './browserSession';
+import { BROWSER_MODE } from './runtimeMode';
 
-const SESSION_STORAGE_KEY = 'kostaallur.sessionId';
+const SESSION_STORAGE_KEY = BROWSER_MODE ? 'kostaallur.browserSessionId' : 'kostaallur.sessionId';
 const REQUEST_TIMEOUT_MS = 8000;
+
+let browserSession: Promise<BrowserSession> | null = null;
+function localSession(): Promise<BrowserSession> {
+  return browserSession ??= import('./browserSession').then(({ BrowserSession }) => new BrowserSession());
+}
 
 /** Сервер ответил кодом ошибки. */
 export class HttpError extends Error {
@@ -158,7 +165,9 @@ let creation: Promise<SessionSnapshot> | null = null;
  */
 export function createSession(): Promise<SessionSnapshot> {
   if (creation) return creation;
-  const pending = request('/api/sessions', { method: 'POST', body: '{}' })
+  const pending = (BROWSER_MODE
+    ? localSession().then((session) => session.snapshot())
+    : request('/api/sessions', { method: 'POST', body: '{}' }))
     .then(parseSnapshot)
     .then((snapshot) => {
       storeSessionId(snapshot.sessionId);
@@ -171,6 +180,12 @@ export function createSession(): Promise<SessionSnapshot> {
 }
 
 export async function fetchSession(sessionId: string, signal: AbortSignal): Promise<SessionSnapshot> {
+  if (BROWSER_MODE) {
+    const session = await localSession();
+    if (signal.aborted) throw new AbortedError();
+    if (sessionId !== session.id) throw new HttpError(404, 'Локальная смена завершена.', 'SESSION_NOT_FOUND');
+    return session.snapshot();
+  }
   return parseSnapshot(await request(`/api/sessions/${encodeURIComponent(sessionId)}`, { signal }));
 }
 
@@ -179,6 +194,12 @@ export async function sendControl(
   command: ControlCommand,
   signal: AbortSignal,
 ): Promise<SessionSnapshot> {
+  if (BROWSER_MODE) {
+    const session = await localSession();
+    if (signal.aborted) throw new AbortedError();
+    if (sessionId !== session.id) throw new HttpError(404, 'Локальная смена завершена.', 'SESSION_NOT_FOUND');
+    return session.control(command);
+  }
   return parseSnapshot(
     await request(`/api/sessions/${encodeURIComponent(sessionId)}/control`, {
       method: 'POST',

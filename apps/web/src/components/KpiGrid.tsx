@@ -71,9 +71,9 @@ export function KpiGrid({ snapshot }: { snapshot: PlantSnapshot }) {
 
       <KpiCard
         Icon={Timer}
-        label='Простой оборудования (сумма по станциям)'
+        label='Простой оборудования'
         tone={downtimeSeconds > 0 ? 'warn' : 'default'}
-        note='Суммарное время остановок оборудования всех станций. Может превышать время смены; ожидание и блокировка не входят.'
+        note='Сумма остановок всех участков. Без ожидания и блокировок.'
       >
         {formatDuration(downtimeSeconds)}
       </KpiCard>

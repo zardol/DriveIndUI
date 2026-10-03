@@ -50,8 +50,7 @@ export function ClockCard({ snapshot, stale }: ClockCardProps) {
         <div className='bar__fill' style={{ width: `${ratio * 100}%` }} />
       </div>
       <p className='clock__meta'>
-        Смена {formatClock(0, false)}–{formatClock(shiftSeconds, false)} · прошло {formatDuration(elapsedSeconds)} из{' '}
-        {formatDuration(shiftSeconds)} симуляции
+        {formatClock(0, false)}–{formatClock(shiftSeconds, false)} · прошло {formatDuration(elapsedSeconds)}
       </p>
     </section>
   );

@@ -1,0 +1,389 @@
+/* stage2-flow.css - Scoped styles for KostaAllur Industrial Flow Diagram */
+
+.flow-container {
+  position: relative;
+  background: #faf8f5;
+  border: 1px solid #e7dfd3;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 8px rgba(30, 41, 59, 0.04);
+  outline: none;
+}
+
+.flow-container:focus-visible {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+}
+
+.flow-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.flow-hint {
+  display: none;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #78716c;
+  text-align: center;
+}
+
+@media (max-width: 992px) {
+  .flow-hint {
+    display: block;
+  }
+}
+
+.flow-svg {
+  display: block;
+  width: 100%;
+  min-width: 960px;
+  height: auto;
+  user-select: none;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.flow-floor-line {
+  stroke: #ebd9c3;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  opacity: 0.6;
+}
+
+/* Node & Card Styling */
+.flow-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.flow-node.node--terminal {
+  cursor: default;
+}
+
+.flow-panel {
+  fill: #ffffff;
+  stroke: #e2d9cc;
+  stroke-width: 1.2;
+  transition: stroke 0.15s ease, filter 0.15s ease;
+}
+
+.flow-node:hover:not(.node--terminal) .flow-panel {
+  stroke: #0d9488;
+  filter: drop-shadow(0 4px 10px rgba(13, 148, 136, 0.1));
+}
+
+.flow-focus {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 2.5;
+}
+
+.flow-node:focus-visible .flow-focus {
+  stroke: #0284c7;
+}
+
+.flow-node.is-selected .flow-panel {
+  stroke: #0d9488;
+  stroke-width: 2.2;
+}
+
+.flow-top-stripe {
+  fill: #0d9488;
+}
+
+.flow-top-stripe--term {
+  fill: #94a3b8;
+}
+
+/* Typography */
+.flow-caption {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  fill: #78716c;
+}
+
+.flow-name {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #1e293b;
+}
+
+.flow-metric-lbl {
+  font-size: 11px;
+  fill: #64748b;
+}
+
+.flow-metric-val {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #1e293b;
+}
+
+.flow-term-num {
+  font-size: 20px;
+  font-weight: 800;
+  fill: #1e293b;
+}
+
+.flow-term-sub {
+  font-size: 11px;
+  font-weight: 600;
+  fill: #475569;
+}
+
+.flow-term-note {
+  font-size: 10px;
+  fill: #94a3b8;
+}
+
+.flow-footnote {
+  font-size: 11px;
+  fill: #78716c;
+}
+
+/* Status badge */
+.flow-badge {
+  fill: #f1f5f9;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.flow-badge-text {
+  font-size: 9.5px;
+  font-weight: 600;
+  fill: #475569;
+}
+
+.st--running .flow-top-stripe { fill: #10b981; }
+.st--running .flow-badge { fill: #ecfdf5; stroke: #a7f3d0; }
+.st--running .flow-badge-text { fill: #065f46; }
+.st--running .flow-bar-fill { fill: #10b981; }
+
+.st--warning .flow-top-stripe { fill: #f59e0b; }
+.st--warning .flow-badge { fill: #fffbeb; stroke: #fde68a; }
+.st--warning .flow-badge-text { fill: #92400e; }
+.st--warning .flow-bar-fill { fill: #f59e0b; }
+
+.st--stopped .flow-top-stripe { fill: #ef4444; }
+.st--stopped .flow-badge { fill: #fef2f2; stroke: #fecaca; }
+.st--stopped .flow-badge-text { fill: #991b1b; }
+.st--stopped .flow-bar-fill { fill: #ef4444; }
+
+.st--blocked .flow-top-stripe { fill: #f97316; }
+.st--blocked .flow-badge { fill: #fff7ed; stroke: #fed7aa; }
+.st--blocked .flow-badge-text { fill: #9a3412; }
+.st--blocked .flow-bar-fill { fill: #f97316; }
+
+.st--idle .flow-top-stripe { fill: #94a3b8; }
+.st--idle .flow-badge { fill: #f8fafc; stroke: #e2e8f0; }
+.st--idle .flow-badge-text { fill: #64748b; }
+.st--idle .flow-bar-fill { fill: #94a3b8; }
+
+/* Progress & Util Bars */
+.flow-bar-bg {
+  fill: #f1ede4;
+}
+
+.flow-bar-fill--util {
+  fill: #0284c7;
+}
+
+/* Incident alert badge */
+.flow-alert circle {
+  fill: #ef4444;
+}
+
+.flow-alert text {
+  fill: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.flow-alert--warning circle {
+  fill: #f59e0b;
+}
+
+/* Queue Buffer */
+.flow-queue-box {
+  fill: #ffffff;
+  stroke: #e2d9cc;
+  stroke-width: 1;
+}
+
+.flow-queue-title {
+  font-size: 8.5px;
+  font-weight: 600;
+  fill: #64748b;
+}
+
+.flow-queue-slot {
+  fill: #e8e3d8;
+}
+
+.flow-queue-slot.is-filled {
+  fill: #0d9488;
+}
+
+.flow-queue-slot.is-heavy {
+  fill: #d97706;
+}
+
+/* Connectors & Flow Lines */
+.flow-conn-base {
+  stroke: #dcd4c6;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.flow-conn-line {
+  stroke: #0d9488;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: 0.4;
+}
+
+.flow-conn-arrow {
+  fill: #0d9488;
+}
+
+.conn--halt .flow-conn-line,
+.conn--halt .flow-conn-arrow {
+  stroke: #94a3b8;
+  fill: #94a3b8;
+  opacity: 0.6;
+}
+
+.conn--full .flow-conn-line,
+.conn--full .flow-conn-arrow {
+  stroke: #d97706;
+  fill: #d97706;
+}
+
+/* Equipment bay graphics */
+.equip-bg {
+  fill: #f8f6f1;
+  stroke: #e7dfd2;
+  stroke-width: 1;
+}
+
+.equip-rail-base {
+  stroke: #d6ccbd;
+  stroke-width: 2;
+}
+
+.equip-rail-rollers {
+  stroke: #a89f8f;
+  stroke-width: 2;
+  stroke-dasharray: 4 6;
+}
+
+.equip-rack-frame {
+  fill: #fdfcfb;
+  stroke: #a8a29e;
+  stroke-width: 1.5;
+}
+
+.equip-rack-shelf {
+  stroke: #a8a29e;
+  stroke-width: 1.2;
+}
+
+.spray-cone {
+  fill: #38bdf8;
+  opacity: 0.18;
+  transition: opacity 0.2s ease;
+}
+
+.spray-cone.is-active {
+  opacity: 0.65;
+}
+
+/* Animations (only when active and reduced motion is off) */
+@keyframes conveyorFlow {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+
+.flow-conn-line.is-flowing {
+  stroke-dasharray: 6 4;
+  animation: conveyorFlow 1s linear infinite;
+  opacity: 1;
+}
+
+.equip-rail-rollers.is-moving {
+  animation: conveyorFlow 1s linear infinite;
+}
+
+@keyframes robotArmLeft {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-8deg); }
+}
+
+.anim-arm-left {
+  transform-origin: 0 0;
+  animation: robotArmLeft 1.4s ease-in-out infinite;
+}
+
+@keyframes robotArmRight {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(6deg); }
+}
+
+.anim-arm-right {
+  transform-origin: 0 0;
+  animation: robotArmRight 1.4s ease-in-out infinite;
+}
+
+@keyframes sparkBurst {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+
+.anim-spark {
+  transform-origin: center;
+  animation: sparkBurst 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes hoistBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+.anim-hoist {
+  animation: hoistBounce 1.6s ease-in-out infinite;
+}
+
+@keyframes laserSweep {
+  0%, 100% { transform: translateX(-14px); }
+  50% { transform: translateX(14px); }
+}
+
+.anim-laser {
+  animation: laserSweep 1.5s ease-in-out infinite;
+}
+
+@keyframes alertPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.flow-alert.is-pulsing circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: alertPulse 1.2s ease-in-out infinite;
+}
+
+/* Stale state */
+.flow-container.is-stale {
+  opacity: 0.85;
+  filter: grayscale(15%);
+}
+
+/* Prefers-reduced-motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .flow-container * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

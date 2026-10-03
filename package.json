@@ -16,7 +16,9 @@
     "test": "vitest run",
     "build": "npm run typecheck && npm run build -w @kosta/web && npm run build -w @kosta/server",
     "start": "node dist/server.mjs",
-    "check": "npm run typecheck && npm test && npm run build"
+    "build:demo": "npm run typecheck && npm run build:demo -w @kosta/web",
+    "preview:demo": "npm run preview:demo -w @kosta/web",
+    "check": "npm run typecheck && npm test && npm run build && npm run build:demo"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
