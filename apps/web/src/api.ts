@@ -1,6 +1,7 @@
 import type { ApiError, ControlCommand, SessionSnapshot } from './types';
 import type { BrowserSession } from './browserSession';
 import { BROWSER_MODE } from './runtimeMode';
+import type { ComparisonOptions, SessionComparison } from '@kosta/shared';
 
 const SESSION_STORAGE_KEY = BROWSER_MODE ? 'kostaallur.browserSessionId' : 'kostaallur.sessionId';
 const REQUEST_TIMEOUT_MS = 8000;
@@ -142,6 +143,7 @@ function parseSnapshot(value: unknown): SessionSnapshot {
     const v = value as Record<string, unknown>;
     if (
       typeof v.sessionId === 'string' &&
+      typeof v.revision === 'number' &&
       typeof v.running === 'boolean' &&
       typeof v.elapsedSeconds === 'number' &&
       typeof v.shiftSeconds === 'number' &&
@@ -207,4 +209,26 @@ export async function sendControl(
       signal,
     }),
   );
+}
+
+export async function compareSession(sessionId: string, options: ComparisonOptions, signal: AbortSignal): Promise<SessionComparison> {
+  if (BROWSER_MODE) {
+    const [session, { runComparison }] = await Promise.all([localSession(), import('./comparisonClient')]);
+    if (signal.aborted) throw new AbortedError();
+    if (sessionId !== session.id) throw new HttpError(404, 'Локальная смена завершена.', 'SESSION_NOT_FOUND');
+    return runComparison({ ...session.fork(), options }, signal);
+  }
+  const value = await request(`/api/sessions/${encodeURIComponent(sessionId)}/comparison`, {
+    method: 'POST', body: JSON.stringify(options), signal,
+  });
+  if (typeof value === 'object' && value !== null) {
+    const v = value as Partial<SessionComparison>;
+    if (v.sessionId === sessionId && Number.isInteger(v.revision) && Number.isFinite(v.fromSeconds)
+      && Number.isFinite(v.toSeconds) && v.options && Array.isArray(v.assumptions)
+      && Array.isArray(v.alternatives) && v.alternatives.length === 3
+      && v.alternatives.every(a => a && Number.isFinite(a.goodUnits) && Array.isArray(a.history))) {
+      return value as SessionComparison;
+    }
+  }
+  throw new NetworkError('Сервер вернул результат расчёта неожиданного формата');
 }

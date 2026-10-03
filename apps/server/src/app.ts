@@ -13,6 +13,11 @@ const controlSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('setScenario'), scenario: z.enum(['normal', 'equipment', 'bottleneck']) }).strict(),
 ]);
 
+const comparisonSchema = z.object({
+  maintenanceMinutes: z.union([z.literal(5), z.literal(10), z.literal(15), z.literal(20)]),
+  reserveSetupMinutes: z.union([z.literal(0), z.literal(5), z.literal(10), z.literal(15)]),
+}).strict();
+
 export async function buildApp(options: { store?: SessionStore; autoTick?: boolean; logger?: boolean; publicDir?: string | false } = {}) {
   const app = Fastify({ logger: options.logger ?? false, bodyLimit: 4096 });
   const store = options.store ?? new SessionStore();
@@ -33,7 +38,7 @@ export async function buildApp(options: { store?: SessionStore; autoTick?: boole
     return reply.status(500).send({ error: 'INTERNAL_ERROR', message: 'Не удалось обработать запрос. Повторите попытку.' });
   });
 
-  app.get('/api/health', async () => ({ status: 'ok', version: '0.1.0', dataMode: 'synthetic' }));
+  app.get('/api/health', async () => ({ status: 'ok', version: '0.3.0', dataMode: 'synthetic' }));
 
   app.post('/api/sessions', async (request, reply) => {
     if (!z.object({}).strict().safeParse(request.body ?? {}).success) {
@@ -48,6 +53,12 @@ export async function buildApp(options: { store?: SessionStore; autoTick?: boole
     const parsed = controlSchema.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: 'INVALID_CONTROL', message: 'Недопустимая команда, скорость или сценарий.' });
     return store.control(request.params.id, parsed.data);
+  });
+
+  app.post<{ Params: { id: string } }>('/api/sessions/:id/comparison', async (request, reply) => {
+    const parsed = comparisonSchema.safeParse(request.body);
+    if (!parsed.success) return reply.status(400).send({ error: 'INVALID_COMPARISON', message: 'Выберите допустимую длительность обслуживания и подключения резерва.' });
+    return store.compare(request.params.id, parsed.data);
   });
 
   const publicDir = options.publicDir === false ? false : (options.publicDir ?? resolve('dist/public'));

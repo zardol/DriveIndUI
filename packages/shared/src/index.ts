@@ -76,6 +76,7 @@ export interface PlantSnapshot {
 
 export interface SessionSnapshot extends PlantSnapshot {
   sessionId: string;
+  revision: number;
   running: boolean;
   speed: Speed;
   updatedAt: string;
@@ -87,3 +88,40 @@ export type ControlCommand =
   | { action: 'setScenario'; scenario: ScenarioId };
 
 export interface ApiError { error: string; message: string }
+
+export interface ComparisonOptions {
+  maintenanceMinutes: 5 | 10 | 15 | 20;
+  reserveSetupMinutes: 0 | 5 | 10 | 15;
+}
+
+export type DecisionId = 'baseline' | 'maintenance' | 'reserve';
+
+export interface ComparisonAlternative {
+  id: DecisionId;
+  title: string;
+  description: string;
+  introducedUnits: number;
+  goodUnits: number;
+  rejectedUnits: number;
+  wip: number;
+  downtimeSeconds: number;
+  planGap: number; // signed: good units minus shift plan
+  deltaGoodUnits: number; // relative to baseline
+  deltaDowntimeSeconds: number; // relative to baseline; negative means less downtime
+  history: HistoryPoint[];
+}
+
+export interface ComparisonResult {
+  scenario: ScenarioId;
+  fromSeconds: number;
+  toSeconds: number;
+  shiftPlan: number;
+  options: ComparisonOptions;
+  assumptions: string[];
+  alternatives: ComparisonAlternative[];
+}
+
+export interface SessionComparison extends ComparisonResult {
+  sessionId: string;
+  revision: number;
+}

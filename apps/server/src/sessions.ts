@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { createEngine, advanceEngine, getSnapshot, type Engine } from '@kosta/simulation';
-import type { ControlCommand, ScenarioId, SessionSnapshot, Speed } from '@kosta/shared';
+import { createEngine, advanceEngine, getSnapshot, compareEngine, type Engine } from '@kosta/simulation';
+import type { ComparisonOptions, SessionComparison, ControlCommand, ScenarioId, SessionSnapshot, Speed } from '@kosta/shared';
 
 interface Session {
   id: string;
+  revision: number;
   engine: Engine;
   scenario: ScenarioId;
   running: boolean;
@@ -30,7 +31,7 @@ export class SessionStore {
     const now = this.now();
     const session: Session = {
       id: randomUUID(), engine: createEngine({ seed: 42, scenario: 'normal' }), scenario: 'normal',
-      running: true, speed: 60, lastTick: now, lastAccess: now, remainder: 0,
+      revision: 0, running: true, speed: 60, lastTick: now, lastAccess: now, remainder: 0,
     };
     this.sessions.set(session.id, session);
     return this.serialize(session);
@@ -50,11 +51,13 @@ export class SessionStore {
       case 'pause': session.running = false; break;
       case 'setSpeed': session.speed = command.speed; break;
       case 'setScenario':
+        session.revision += 1;
         session.scenario = command.scenario;
         session.engine = createEngine({ seed: 42, scenario: command.scenario });
         session.remainder = 0;
         break;
       case 'reset':
+        session.revision += 1;
         session.engine = createEngine({ seed: 42, scenario: session.scenario });
         session.remainder = 0;
         break;
@@ -66,6 +69,12 @@ export class SessionStore {
   tick(): void {
     this.expire();
     for (const session of this.sessions.values()) this.advance(session);
+  }
+
+  compare(id: string, options: ComparisonOptions): SessionComparison {
+    const session = this.find(id);
+    this.advance(session);
+    return { ...compareEngine(session.engine, options), sessionId: session.id, revision: session.revision };
   }
 
   get size() { return this.sessions.size; }
@@ -100,6 +109,6 @@ export class SessionStore {
   }
 
   private serialize(session: Session): SessionSnapshot {
-    return { ...getSnapshot(session.engine), sessionId: session.id, running: session.running, speed: session.speed, updatedAt: new Date(this.now()).toISOString() };
+    return { ...getSnapshot(session.engine), sessionId: session.id, revision: session.revision, running: session.running, speed: session.speed, updatedAt: new Date(this.now()).toISOString() };
   }
 }
