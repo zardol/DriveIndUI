@@ -28,10 +28,10 @@ describe('Decision Comparison', () => {
     advanceEngine(engine, 1000);
     const options = { maintenanceMinutes: 5, reserveSetupMinutes: 5 } as const;
     const res = compareEngine(engine, options);
-    
+
     const remainder = cloneEngine(engine);
     advanceEngine(remainder, SHIFT_SECONDS - 1000);
-    
+
     const baseAlt = res.alternatives.find((a) => a.id === 'baseline');
     expect(baseAlt?.goodUnits).toBe(remainder.goodUnits);
     expect(baseAlt?.deltaGoodUnits).toBe(0);
@@ -43,7 +43,7 @@ describe('Decision Comparison', () => {
   it('equipment scenario maintenance yields correct remaining downtime delta', () => {
     const engine = createEngine({ scenario: 'equipment' });
     advanceEngine(engine, 1200);
-    
+
     let res = compareEngine(engine, { maintenanceMinutes: 5, reserveSetupMinutes: 0 });
     let maint = res.alternatives.find((a) => a.id === 'maintenance');
     expect(maint?.deltaDowntimeSeconds).toBe(-600);
@@ -65,13 +65,13 @@ describe('Decision Comparison', () => {
   it('maintains finite unit conservation across different timepoints and scenarios', () => {
     const times = [0, 600, 1200, 2100, 28700, 28800];
     const scenarios = ['normal', 'equipment', 'bottleneck'] as const;
-    
+
     for (const scen of scenarios) {
       for (const t of times) {
         const engine = createEngine({ scenario: scen });
         advanceEngine(engine, t);
         const res = compareEngine(engine, { maintenanceMinutes: 5, reserveSetupMinutes: 5 });
-        
+
         for (const alt of res.alternatives) {
           expect(alt.goodUnits).toBeGreaterThanOrEqual(engine.goodUnits);
           expect(alt.introducedUnits).toBe(alt.goodUnits + alt.rejectedUnits + alt.wip);
@@ -91,7 +91,7 @@ describe('Decision Comparison', () => {
     const base = res.alternatives.find((a) => a.id === 'baseline');
     const maint = res.alternatives.find((a) => a.id === 'maintenance');
     const reserve = res.alternatives.find((a) => a.id === 'reserve');
-    
+
     expect(maint?.goodUnits).toBe(base?.goodUnits);
     expect(reserve?.goodUnits).toBe(base?.goodUnits);
     expect(maint?.deltaDowntimeSeconds).toBe(0);

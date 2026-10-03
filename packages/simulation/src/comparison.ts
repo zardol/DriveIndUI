@@ -4,10 +4,10 @@ import type { ComparisonOptions, ComparisonResult, ComparisonAlternative, Decisi
 
 export function compareEngine(source: Engine, options: ComparisonOptions): ComparisonResult {
   if (!options) throw new RangeError('Options are required');
-  
+
   const validMaintenance = [5, 10, 15, 20];
   const validReserve = [0, 5, 10, 15];
-  
+
   if (!validMaintenance.includes(options.maintenanceMinutes)) {
     throw new RangeError(`Invalid maintenanceMinutes: ${options.maintenanceMinutes}`);
   }
@@ -27,7 +27,7 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
     const downtime = eng.stations.reduce((sum, s) => sum + s.downtimeSeconds, 0);
     const baseDowntime = baseEng ? baseEng.stations.reduce((sum, s) => sum + s.downtimeSeconds, 0) : downtime;
     const baseUnits = baseEng ? baseEng.goodUnits : eng.goodUnits;
-    
+
     let wip = 0;
     for (const st of eng.stations) wip += st.queue + (st.inProcess ? 1 : 0);
 
