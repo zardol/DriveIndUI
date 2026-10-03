@@ -43,9 +43,19 @@ function CameraRig({ request, layout, route, motion }: { request: CameraRequest;
     const offset = new Vector3(0.5, 1.2, 1.1).normalize();
     const aspect = size.width / Math.max(1, size.height);
     const { width, depth } = layout.floor;
-    // Fit the full floor on both narrow and wide displays without changing model coordinates.
-    let distance = Math.max((width * 0.59 + depth * 0.81) * 0.53 + 6,
-      (width * 0.81 + depth * 0.59) / Math.max(0.4, aspect)) * 1.13 / (2 * Math.tan(21 * Math.PI / 180));
+    // Fit all corners in camera space, including perspective depth near the camera.
+    // A flat width/height estimate clips the outlet on wide, short viewports.
+    const right = new Vector3(offset.z, 0, -offset.x).normalize();
+    const up = new Vector3().crossVectors(offset, right).normalize();
+    const tanFov = Math.tan((camera as PerspectiveCamera).fov * Math.PI / 360);
+    let distance = 0;
+    for (const x of [-width / 2, width / 2]) for (const z of [-depth / 2, depth / 2]) for (const y of [0, 6]) {
+      const corner = new Vector3(x, y, z);
+      const towardCamera = corner.dot(offset);
+      distance = Math.max(distance, towardCamera + Math.abs(corner.dot(up)) / tanFov,
+        towardCamera + Math.abs(corner.dot(right)) / (tanFov * aspect));
+    }
+    distance *= 1.08;
     if (request.view === 'station') {
       const station = layout.stations.find(item => item.id === request.station)!;
       target.set(station.position[0], 1, station.position[1]);
@@ -159,7 +169,8 @@ function LabelProjection({ anchors, labels }: { anchors: LabelAnchor[]; labels: 
       point.set(...anchor.position).project(camera);
       const visible = point.z >= -1 && point.z <= 1 && Math.abs(point.x) < 1.1 && Math.abs(point.y) < 1.1;
       element.style.visibility = visible ? 'visible' : 'hidden';
-      element.style.transform = `translate(${(point.x + 1) * size.width / 2}px,${(1 - point.y) * size.height / 2}px) translate(-50%,-100%)`;
+      const labelLift = anchor.id === 'supply' ? 40 : 0;
+      element.style.transform = `translate(${(point.x + 1) * size.width / 2}px,${(1 - point.y) * size.height / 2 - labelLift}px) translate(-50%,-100%)`;
     }
   });
   return null;
