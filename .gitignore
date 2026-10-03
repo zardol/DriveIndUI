@@ -10,3 +10,10 @@ Desktop.ini
 
 # Журналы
 *.log
+
+node_modules/
+dist/
+coverage/
+.local/
+playwright-report/
+test-results/

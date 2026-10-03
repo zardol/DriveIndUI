@@ -1,0 +1,41 @@
+import { Wifi, WifiOff } from 'lucide-react';
+import type { ConnectionState } from '../useSession';
+
+const CONNECTION_LABEL: Record<ConnectionState, string> = {
+  connecting: 'Подключение…',
+  online: 'Подключено',
+  lost: 'Связь потеряна',
+};
+
+interface TopBarProps {
+  connection: ConnectionState;
+  sessionId: string | null;
+}
+
+export function TopBar({ connection, sessionId }: TopBarProps) {
+  const Icon = connection === 'lost' ? WifiOff : Wifi;
+
+  return (
+    <header className='topbar'>
+      <div className='topbar__brand'>
+        <span className='topbar__name'>KostaAllur</span>
+        <span className='topbar__sub'>Цифровой двойник завода</span>
+      </div>
+      <div className='topbar__right'>
+        <span className='demo-badge'>
+          <span className='demo-badge__dot' aria-hidden='true' />
+          Демонстрационные данные
+        </span>
+        <span className={`conn-chip conn-chip--${connection}`} role='status' aria-live='polite'>
+          <Icon size={16} aria-hidden='true' />
+          <span>{CONNECTION_LABEL[connection]}</span>
+          {sessionId && (
+            <span className='conn-chip__id' title='Идентификатор сессии'>
+              #{sessionId.slice(0, 8)}
+            </span>
+          )}
+        </span>
+      </div>
+    </header>
+  );
+}
