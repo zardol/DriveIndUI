@@ -1,9 +1,5 @@
-/**
- * Deterministic one-second accumulating conveyor; no wall clock or unseeded RNG.
- * Tick order: work -> release -> move front to back -> load -> exit -> supply.
- * Arrivals can start work only next tick. Vehicles retain their ID and distance
- * through every stage; station queues are derived from the active vehicle list.
- */
+/** Deterministic one-second conveyor: work, release, move, load, exit, supply.
+ * Configuration is validated and copied once when a new shift is created. */
 import { STATIONS, CONVEYOR_SPEC } from '@kosta/shared';
 import type {
   HistoryPoint,
@@ -14,8 +10,10 @@ import type {
   StationId,
   StationSnapshot,
   StationStatus,
-  ConveyorSnapshot
+  ConveyorSnapshot,
+  ProductionConfig
 } from '@kosta/shared';
+import { DEFAULT_PRODUCTION_CONFIG, parseProductionConfig } from '@kosta/shared';
 import { createRng, nextRandom } from './prng';
 import type { RngState } from './prng';
 
@@ -29,13 +27,17 @@ export const DEFAULT_SEED = 42;
 export const DEFAULT_SCENARIO: ScenarioId = 'normal';
 export const WORK_UNITS_PER_SECOND = 90;
 
+const CONVEYOR_LENGTH = CONVEYOR_SPEC.length;
+const STATION_DISTANCES = CONVEYOR_SPEC.stationDistances;
+const MIN_SPACING = CONVEYOR_SPEC.minSpacing;
+
 const SCENARIO_IDS: readonly ScenarioId[] = ['normal', 'equipment', 'bottleneck'];
 const SECONDS_PER_HOUR = 3600;
-const NOMINAL_BOTTLENECK_CYCLE_SECONDS = STATIONS.reduce((max, s) => Math.max(max, s.cycleSeconds), 1);
 
 export interface EngineOptions {
   seed?: number;
   scenario?: ScenarioId;
+  config?: ProductionConfig;
 }
 
 export interface ScenarioEvent {
@@ -119,6 +121,7 @@ export interface EngineVehicle {
 export interface Engine {
   readonly scenario: ScenarioId;
   readonly seed: number;
+  readonly config: ProductionConfig;
   elapsedSeconds: number;
   introducedUnits: number;
   goodUnits: number;
@@ -138,30 +141,46 @@ export function createEngine(options: EngineOptions = {}): Engine {
   if (typeof seed !== 'number' || !Number.isFinite(seed)) {
     throw new RangeError(`createEngine: seed must be a finite number, received ${String(seed)}`);
   }
+
   const scenario = opts.scenario ?? DEFAULT_SCENARIO;
   if (!SCENARIO_IDS.includes(scenario)) {
     throw new RangeError(`createEngine: unknown scenario ${String(scenario)}`);
   }
 
-  const stations: EngineStationState[] = STATIONS.map((def) => ({
-    def,
-    queue: 0,
-    inProcess: false,
-    finished: false,
-    workDone: 0,
-    workRequired: def.cycleSeconds * WORK_UNITS_PER_SECOND,
-    completed: 0,
-    busySeconds: 0,
-    downtimeSeconds: 0,
-    stopped: false,
-    cycleFactor: 1,
-    capacityMultiplier: 1,
-    activeVehicleId: null,
-  }));
+  const parsedConfig = parseProductionConfig(opts.config ?? DEFAULT_PRODUCTION_CONFIG);
+  if (!parsedConfig.ok) {
+    throw new RangeError(parsedConfig.issues.map(issue => `${issue.path}: ${issue.message}`).join('; '));
+  }
+  const config = parsedConfig.value;
+
+  const stations: EngineStationState[] = STATIONS.map((baseDef) => {
+    const confDef = config.stations.find(s => s.id === baseDef.id)!;
+    const def: StationDefinition = {
+      ...baseDef,
+      cycleSeconds: confDef.cycleSeconds,
+      bufferCapacity: confDef.bufferCapacity,
+    };
+    return {
+      def,
+      queue: 0,
+      inProcess: false,
+      finished: false,
+      workDone: 0,
+      workRequired: def.cycleSeconds * WORK_UNITS_PER_SECOND,
+      completed: 0,
+      busySeconds: 0,
+      downtimeSeconds: 0,
+      stopped: false,
+      cycleFactor: 1,
+      capacityMultiplier: 1,
+      activeVehicleId: null,
+    };
+  });
 
   const engine: Engine = {
     scenario,
     seed,
+    config,
     elapsedSeconds: 0,
     introducedUnits: 0,
     goodUnits: 0,
@@ -205,7 +224,7 @@ export function advanceEngine(engine: Engine, seconds: number): void {
   if (!Number.isFinite(seconds) || !Number.isInteger(seconds) || seconds < 0) {
     throw new RangeError(`advanceEngine: seconds must be a non-negative integer, received ${String(seconds)}`);
   }
-  const steps = Math.min(seconds, SHIFT_SECONDS - engine.elapsedSeconds);
+  const steps = Math.min(seconds, engine.config.shiftSeconds - engine.elapsedSeconds);
   for (let i = 0; i < steps; i += 1) {
     tick(engine);
   }
@@ -219,7 +238,6 @@ export function getSnapshot(engine: Engine): PlantSnapshot {
     const assigned = engine.vehicles.filter(v => v.stageIndex === i && v.id !== st.activeVehicleId);
     const queuedUnits = assigned.filter(v => v.actualLastSpeed === 0).length;
     const arrivingUnits = assigned.filter(v => v.actualLastSpeed > 0).length;
-
     return {
       id: st.def.id,
       name: st.def.name,
@@ -242,25 +260,24 @@ export function getSnapshot(engine: Engine): PlantSnapshot {
   const wip = workInProgress(engine);
 
   const conveyor: ConveyorSnapshot = {
-    length: CONVEYOR_SPEC.length,
-    stationDistances: [...CONVEYOR_SPEC.stationDistances],
-    nominalSpeed: CONVEYOR_SPEC.speed,
-    minSpacing: CONVEYOR_SPEC.minSpacing,
+    length: CONVEYOR_LENGTH,
+    stationDistances: [...STATION_DISTANCES],
+    nominalSpeed: engine.config.conveyorSpeed,
+    minSpacing: MIN_SPACING,
     vehicles: engine.vehicles.map(v => {
       let appearance: 'body' | 'painted' | 'assembled' = 'body';
       if (v.stageIndex >= 3) appearance = 'assembled';
       else if (v.stageIndex >= 2) appearance = 'painted';
 
       const state = v.actualLastSpeed > 0 ? 'moving' :
-                    engine.stations.some(st => st.activeVehicleId === v.id) ?
-                      (engine.stations.find(st => st.activeVehicleId === v.id)!.finished ? 'blocked' : 'processing') :
-                    'queued';
+        engine.stations.some(st => st.activeVehicleId === v.id) ?
+          (engine.stations.find(st => st.activeVehicleId === v.id)!.finished ? 'blocked' : 'processing') :
+          'queued';
 
       let stage: StationId | 'outbound' = 'outbound';
       if (v.stageIndex < STATIONS.length) {
         stage = STATIONS[v.stageIndex].id;
       }
-
       return {
         id: v.id,
         serial: v.serial,
@@ -276,9 +293,10 @@ export function getSnapshot(engine: Engine): PlantSnapshot {
 
   return {
     scenario: engine.scenario,
+    config: structuredClone(engine.config),
     elapsedSeconds: elapsed,
-    shiftSeconds: SHIFT_SECONDS,
-    shiftPlan: SHIFT_PLAN,
+    shiftSeconds: engine.config.shiftSeconds,
+    shiftPlan: engine.config.shiftPlan,
     introducedUnits: engine.introducedUnits,
     goodUnits: engine.goodUnits,
     rejectedUnits: engine.rejectedUnits,
@@ -295,7 +313,6 @@ export function getSnapshot(engine: Engine): PlantSnapshot {
 }
 
 function tick(engine: Engine): void {
-  // 1. Work on currently loaded stations
   for (const st of engine.stations) {
     if (st.stopped) {
       st.downtimeSeconds += 1;
@@ -311,7 +328,6 @@ function tick(engine: Engine): void {
     }
   }
 
-  // 2. Try to release finished vehicles
   for (let i = engine.stations.length - 1; i >= 0; i--) {
     const st = engine.stations[i];
     if (st.stopped || !st.inProcess || !st.finished) continue;
@@ -336,48 +352,49 @@ function tick(engine: Engine): void {
       if (vIndex > 0) {
         leaderDist = engine.vehicles[vIndex - 1].distance;
       }
-      if (leaderDist - CONVEYOR_SPEC.minSpacing >= v.distance + CONVEYOR_SPEC.speed) {
+
+      if (leaderDist - MIN_SPACING > v.distance + 1e-9) {
         st.completed += 1;
         st.inProcess = false;
         st.finished = false;
         st.workDone = 0;
         st.activeVehicleId = null;
-
         v.stageIndex = nextStage;
         if (nextStage === engine.stations.length) {
-          v.outcome = nextRandom(engine.rng) < QUALITY_REJECT_RATE ? 'rejected' : 'good';
+          v.outcome = nextRandom(engine.rng) < engine.config.rejectRate ? 'rejected' : 'good';
         }
       }
     }
   }
 
-  // 3. Move vehicles
   for (let i = 0; i < engine.vehicles.length; i++) {
     const v = engine.vehicles[i];
-    let maxDist = v.distance + CONVEYOR_SPEC.speed;
+    let maxDist = v.distance + engine.config.conveyorSpeed;
 
     if (i > 0) {
       const leader = engine.vehicles[i - 1];
-      maxDist = Math.min(maxDist, leader.distance - CONVEYOR_SPEC.minSpacing);
+      maxDist = Math.min(maxDist, leader.distance - MIN_SPACING);
     }
 
     if (v.stageIndex < engine.stations.length) {
-      const stopDist = CONVEYOR_SPEC.stationDistances[v.stageIndex];
+      const stopDist = STATION_DISTANCES[v.stageIndex];
       maxDist = Math.min(maxDist, stopDist);
     } else {
-      maxDist = Math.min(maxDist, CONVEYOR_SPEC.length);
+      maxDist = Math.min(maxDist, CONVEYOR_LENGTH);
     }
 
-    const moved = Math.max(0, maxDist - v.distance);
-    v.distance += moved;
-    v.actualLastSpeed = moved;
+    if (maxDist < v.distance) {
+      maxDist = v.distance;
+    }
+
+    v.actualLastSpeed = maxDist - v.distance;
+    v.distance = maxDist;
   }
 
-  // 4. Load stations
   for (let i = 0; i < engine.stations.length; i++) {
     const st = engine.stations[i];
     if (!st.stopped && !st.inProcess) {
-      const stopDist = CONVEYOR_SPEC.stationDistances[i];
+      const stopDist = STATION_DISTANCES[i];
       const v = engine.vehicles.find(v => v.stageIndex === i && v.distance === stopDist);
       if (v) {
         st.inProcess = true;
@@ -388,10 +405,9 @@ function tick(engine: Engine): void {
     }
   }
 
-  // 5. Exit outbound vehicles
   while (engine.vehicles.length > 0) {
     const v = engine.vehicles[0];
-    if (v.distance === CONVEYOR_SPEC.length) {
+    if (v.distance === CONVEYOR_LENGTH) {
       if (v.outcome === 'good') {
         engine.goodUnits += 1;
       } else if (v.outcome === 'rejected') {
@@ -403,14 +419,13 @@ function tick(engine: Engine): void {
     }
   }
 
-  // 6. Supply new vehicle
   const nextElapsed = engine.elapsedSeconds + 1;
-  if (nextElapsed % SUPPLY_INTERVAL_SECONDS === 0) {
+  if (nextElapsed % engine.config.supplyIntervalSeconds === 0) {
     const firstSt = engine.stations[0];
     const assignedToFirst = engine.vehicles.filter(x => x.stageIndex === 0 && x.id !== firstSt.activeVehicleId).length;
     if (assignedToFirst < firstSt.def.bufferCapacity) {
       const clearance = engine.vehicles.length === 0 ? Infinity : engine.vehicles[engine.vehicles.length - 1].distance;
-      if (clearance >= CONVEYOR_SPEC.minSpacing) {
+      if (clearance >= MIN_SPACING) {
         engine.introducedUnits += 1;
         const serial = engine.introducedUnits;
         engine.vehicles.push({
@@ -425,7 +440,6 @@ function tick(engine: Engine): void {
     }
   }
 
-  // 7. Update derived queues
   for (let i = 0; i < engine.stations.length; i++) {
     const st = engine.stations[i];
     const assigned = engine.vehicles.filter(x => x.stageIndex === i).length;
@@ -443,6 +457,7 @@ export function applyConditions(engine: Engine): void {
     st.stopped = false;
     st.cycleFactor = 1;
   }
+
   for (const event of engine.events) {
     const active = t >= event.fromSeconds && (event.toSeconds === null || t < event.toSeconds);
     if (active) {
@@ -452,6 +467,7 @@ export function applyConditions(engine: Engine): void {
         else st.cycleFactor = Math.max(st.cycleFactor, event.cycleFactor);
       }
     }
+
     const index = engine.incidentIndexByEvent.get(event.id);
     if (active && index === undefined) {
       engine.incidentIndexByEvent.set(event.id, engine.incidents.length);
@@ -475,7 +491,7 @@ export function applyConditions(engine: Engine): void {
 
 function recordHistory(engine: Engine): void {
   const t = engine.elapsedSeconds;
-  if (t % HISTORY_INTERVAL_SECONDS !== 0 && t !== SHIFT_SECONDS) return;
+  if (t % HISTORY_INTERVAL_SECONDS !== 0 && t !== engine.config.shiftSeconds) return;
   const last = engine.history[engine.history.length - 1];
   if (last && last.elapsedSeconds === t) return;
   engine.history.push(historyPoint(engine));
@@ -485,7 +501,7 @@ function historyPoint(engine: Engine): HistoryPoint {
   return {
     elapsedSeconds: engine.elapsedSeconds,
     goodUnits: engine.goodUnits,
-    planUnits: round2((SHIFT_PLAN * engine.elapsedSeconds) / SHIFT_SECONDS),
+    planUnits: round2((engine.config.shiftPlan * engine.elapsedSeconds) / engine.config.shiftSeconds),
     wip: workInProgress(engine),
   };
 }
@@ -513,10 +529,13 @@ function forecastUnits(engine: Engine, wip: number): number {
   const elapsed = engine.elapsedSeconds;
   const good = engine.goodUnits;
   if (elapsed <= 0) return good;
-  const remaining = SHIFT_SECONDS - elapsed;
+  const remaining = engine.config.shiftSeconds - elapsed;
   if (remaining <= 0) return good;
-  const projected = (good / elapsed) * SHIFT_SECONDS;
-  const ceiling = good + wip + Math.floor(remaining / NOMINAL_BOTTLENECK_CYCLE_SECONDS);
+  const projected = (good / elapsed) * engine.config.shiftSeconds;
+
+  const bottleneckCycle = engine.config.stations.reduce((max, s) => Math.max(max, s.cycleSeconds), 1);
+  const ceiling = good + wip + Math.floor(remaining / bottleneckCycle);
+
   return Math.round(clamp(projected, good, ceiling));
 }
 

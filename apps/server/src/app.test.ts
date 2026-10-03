@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { buildApp } from './app.js';
 import { SessionStore } from './sessions.js';
 import type { SessionSnapshot, SessionComparison } from '@kosta/shared';
+import { DEFAULT_PRODUCTION_CONFIG } from '@kosta/shared';
 import { advanceEngine, compareEngine, createEngine } from '@kosta/simulation';
 
 const apps: Awaited<ReturnType<typeof buildApp>>[] = [];
@@ -17,6 +18,29 @@ async function setup() {
 }
 
 describe('session API', () => {
+  it('validates configuration at the API boundary and preserves it through session commands and comparison', async () => {
+    const { app, create } = await setup();
+    const session = await create();
+    const url = `/api/sessions/${session.sessionId}`;
+    const config = { ...structuredClone(DEFAULT_PRODUCTION_CONFIG), shiftSeconds: 3601, shiftPlan: 9, conveyorSpeed: 0.3, rejectRate: 0.035 };
+    const applied = await app.inject({ method: 'POST', url: `${url}/control`, payload: { action: 'setConfiguration', config } });
+    expect(applied.statusCode).toBe(200);
+    expect(applied.json()).toMatchObject({ config, running: false, elapsedSeconds: 0, revision: 1 });
+    for (const bad of [{ ...config, shiftSeconds: 0 }, { ...config, extra: true }, { ...config, stations: [] }, { ...config, rejectRate: '0.03' }, null]) {
+      const response = await app.inject({ method: 'POST', url: `${url}/control`, payload: { action: 'setConfiguration', config: bad } });
+      expect(response.statusCode).toBe(400);
+      expect((await app.inject(url)).json()).toEqual(applied.json());
+    }
+    for (const command of [{ action: 'reset' }, { action: 'setScenario', scenario: 'bottleneck' }]) {
+      const response = await app.inject({ method: 'POST', url: `${url}/control`, payload: command });
+      expect(response.json()).toMatchObject({ config, elapsedSeconds: 0, running: false });
+    }
+    const result = (await app.inject({ method: 'POST', url: `${url}/comparison`, payload: { maintenanceMinutes: 5, reserveSetupMinutes: 0 } })).json<SessionComparison>();
+    expect(result).toMatchObject({ shiftPlan: 9, toSeconds: 3601, revision: 3 });
+    expect(result.assumptions.join(' ')).toContain('3.5%');
+    expect(result.alternatives.every(alt => alt.history.at(-1)?.elapsedSeconds === 3601)).toBe(true);
+    const other = await create(); expect(other.config).toEqual(DEFAULT_PRODUCTION_CONFIG);
+  });
   it('compares exact current state without changing the session and increments reset revisions', async () => {
     const { app, create, advance } = await setup();
     const s = await create();

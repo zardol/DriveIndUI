@@ -72,11 +72,7 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
   const rows = useMemo(() => buildRows(snapshot), [snapshot]);
 
   const ticks = useMemo(() => {
-    const result: number[] = [];
-    if (snapshot.shiftSeconds > 0) {
-      for (let t = 0; t <= snapshot.shiftSeconds; t += 3600) result.push(t);
-    }
-    return result;
+    return Array.from({ length: 5 }, (_, index) => Math.round(snapshot.shiftSeconds * index / 4));
   }, [snapshot.shiftSeconds]);
 
   const maxGood = rows.reduce((max, row) => Math.max(max, row.goodUnits ?? 0), 0);
@@ -92,7 +88,7 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
       <div className='card__head'>
         <div>
           <h2 id='production-title' className='card__title'>
-            Выпуск нарастающим итогом: факт и план
+            Расчёт выпуска и план
           </h2>
           <p className='card__sub'>Годные автомобили по времени смены (время симуляции)</p>
         </div>
@@ -106,7 +102,7 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
       <ul className='chart-legend' aria-label='Обозначения графика'>
         <li>
           <span className='swatch swatch--fact' aria-hidden='true' />
-          Факт
+          Расчёт модели
         </li>
         <li>
           <span className='swatch swatch--plan' aria-hidden='true' />
@@ -120,7 +116,7 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
 
       <p className='sr-only'>{summary}</p>
 
-      <div className='chart-wrap' role='img' aria-label='График выпуска: факт, план и оценка по текущему темпу'>
+      <div className='chart-wrap' role='img' aria-label='График выпуска: расчёт модели, план и оценка по текущему темпу'>
         <ResponsiveContainer width='100%' height='100%'>
           <ComposedChart data={rows} margin={{ top: 12, right: 20, bottom: 4, left: 0 }}>
             <defs>
@@ -160,7 +156,7 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
             <Area
               type='monotone'
               dataKey='goodUnits'
-              name='Факт'
+              name='Расчёт модели'
               stroke={COLOR_FACT}
               strokeWidth={2.5}
               fill='url(#factFill)'

@@ -3,6 +3,7 @@ import staticFiles from '@fastify/static';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
+import { parseProductionConfig, type ProductionConfig } from '@kosta/shared';
 import { SessionError, SessionStore } from './sessions.js';
 
 const controlSchema = z.discriminatedUnion('action', [
@@ -11,6 +12,14 @@ const controlSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('reset') }).strict(),
   z.object({ action: z.literal('setSpeed'), speed: z.union([z.literal(1), z.literal(10), z.literal(60)]) }).strict(),
   z.object({ action: z.literal('setScenario'), scenario: z.enum(['normal', 'equipment', 'bottleneck']) }).strict(),
+  z.object({ action: z.literal('setConfiguration'), config: z.unknown().transform((value, ctx): ProductionConfig => {
+    const result = parseProductionConfig(value);
+    if (!result.ok) {
+      ctx.addIssue({ code: 'custom', message: result.issues.map(issue => `${issue.path}: ${issue.message}`).join('; ') });
+      return z.NEVER;
+    }
+    return result.value;
+  }) }).strict(),
 ]);
 
 const comparisonSchema = z.object({
@@ -38,7 +47,7 @@ export async function buildApp(options: { store?: SessionStore; autoTick?: boole
     return reply.status(500).send({ error: 'INTERNAL_ERROR', message: 'Не удалось обработать запрос. Повторите попытку.' });
   });
 
-  app.get('/api/health', async () => ({ status: 'ok', version: '0.5.0', dataMode: 'synthetic' }));
+  app.get('/api/health', async () => ({ status: 'ok', version: '0.6.0', dataMode: 'synthetic' }));
 
   app.post('/api/sessions', async (request, reply) => {
     if (!z.object({}).strict().safeParse(request.body ?? {}).success) {
@@ -51,7 +60,7 @@ export async function buildApp(options: { store?: SessionStore; autoTick?: boole
 
   app.post<{ Params: { id: string } }>('/api/sessions/:id/control', async (request, reply) => {
     const parsed = controlSchema.safeParse(request.body);
-    if (!parsed.success) return reply.status(400).send({ error: 'INVALID_CONTROL', message: 'Недопустимая команда, скорость или сценарий.' });
+    if (!parsed.success) return reply.status(400).send({ error: 'INVALID_CONTROL', message: 'Недопустимая команда или конфигурация. Проверьте файл перед применением.' });
     return store.control(request.params.id, parsed.data);
   });
 

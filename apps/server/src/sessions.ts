@@ -53,14 +53,22 @@ export class SessionStore {
       case 'setScenario':
         session.revision += 1;
         session.scenario = command.scenario;
-        session.engine = createEngine({ seed: 42, scenario: command.scenario });
+        session.engine = createEngine({ seed: 42, scenario: command.scenario, config: session.engine.config });
         session.remainder = 0;
         break;
       case 'reset':
         session.revision += 1;
-        session.engine = createEngine({ seed: 42, scenario: session.scenario });
+        session.engine = createEngine({ seed: 42, scenario: session.scenario, config: session.engine.config });
         session.remainder = 0;
         break;
+      case 'setConfiguration': {
+        const next = createEngine({ seed: 42, scenario: session.scenario, config: command.config });
+        session.engine = next;
+        session.revision += 1;
+        session.remainder = 0;
+        session.running = false;
+        break;
+      }
     }
     session.lastTick = this.now();
     return this.serialize(session);

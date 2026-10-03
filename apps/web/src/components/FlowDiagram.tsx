@@ -339,7 +339,7 @@ export function FlowDiagram({ snapshot, selected, animate, stale, onSelect }: Fl
           {`В потоке: ${formatInt(snapshot.wip)} ед.`}
         </text>
         <text className='flow-footnote' x={VB_W - MARGIN} y={VB_H - 12} textAnchor='end'>
-          Схема иллюстративная · данные синтетические
+          Схема иллюстративная · расчёт модели
         </text>
       </svg>
       <p className='flow-hint'>Прокрутите схему по горизонтали, чтобы увидеть все этапы.</p>

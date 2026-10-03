@@ -109,7 +109,7 @@ export function ControlBar({ snapshot, pending, offline, error, onCommand, onDis
           <Info size={15} aria-hidden='true' />
           <span>
             <strong>{scenario.name}.</strong> {scenario.description} Смена сценария и сброс обнуляют время и историю,
-            скорость и состояние запуска сохраняются.
+            параметры производства, скорость и состояние запуска сохраняются.
           </span>
         </p>
       )}

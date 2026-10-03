@@ -1,4 +1,7 @@
-export type StationId = 'welding' | 'painting' | 'assembly' | 'quality';
+import type { ProductionConfig, ProductionStationId } from './production';
+export * from './production';
+
+export type StationId = ProductionStationId;
 export type StationStatus = 'running' | 'idle' | 'blocked' | 'stopped' | 'warning';
 export type ScenarioId = 'normal' | 'equipment' | 'bottleneck';
 export type Speed = 1 | 10 | 60;
@@ -87,6 +90,7 @@ export interface ConveyorSnapshot {
 }
 
 export interface PlantSnapshot {
+  config: ProductionConfig;
   scenario: ScenarioId;
   elapsedSeconds: number;
   shiftSeconds: number;
@@ -116,7 +120,8 @@ export interface SessionSnapshot extends PlantSnapshot {
 export type ControlCommand =
   | { action: 'play' | 'pause' | 'reset' }
   | { action: 'setSpeed'; speed: Speed }
-  | { action: 'setScenario'; scenario: ScenarioId };
+  | { action: 'setScenario'; scenario: ScenarioId }
+  | { action: 'setConfiguration'; config: ProductionConfig };
 
 export interface ApiError { error: string; message: string }
 
