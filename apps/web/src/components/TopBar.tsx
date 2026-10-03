@@ -1,5 +1,6 @@
-import { Wifi, WifiOff } from 'lucide-react';
+import { Monitor, Wifi, WifiOff } from 'lucide-react';
 import type { ConnectionState } from '../useSession';
+import { BROWSER_MODE } from '../runtimeMode';
 
 const CONNECTION_LABEL: Record<ConnectionState, string> = {
   connecting: 'Подключение…',
@@ -13,7 +14,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ connection, sessionId }: TopBarProps) {
-  const Icon = connection === 'lost' ? WifiOff : Wifi;
+  const Icon = BROWSER_MODE ? Monitor : connection === 'lost' ? WifiOff : Wifi;
 
   return (
     <header className='topbar'>
@@ -28,7 +29,7 @@ export function TopBar({ connection, sessionId }: TopBarProps) {
         </span>
         <span className={`conn-chip conn-chip--${connection}`} role='status' aria-live='polite'>
           <Icon size={16} aria-hidden='true' />
-          <span>{CONNECTION_LABEL[connection]}</span>
+          <span>{BROWSER_MODE && connection === 'online' ? 'Симуляция в браузере' : CONNECTION_LABEL[connection]}</span>
           {sessionId && (
             <span className='conn-chip__id' title='Идентификатор сессии'>
               #{sessionId.slice(0, 8)}

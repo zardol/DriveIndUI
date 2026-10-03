@@ -3,6 +3,13 @@ import { formatClock, formatInt, formatSigned } from '../format';
 import type { PlantSnapshot } from '../types';
 
 export function ForecastCard({ snapshot }: { snapshot: PlantSnapshot }) {
+  if (snapshot.goodUnits + snapshot.rejectedUnits === 0) {
+    return <section className='card forecast' aria-labelledby='forecast-title'>
+      <h2 id='forecast-title' className='forecast__title'>Оценка выпуска к концу смены</h2>
+      <p className='forecast__diff'>Собираем статистику выпуска</p>
+      <p className='forecast__note'>Оценка появится после первого проверенного автомобиля.</p>
+    </section>;
+  }
   const forecast = Math.round(snapshot.forecastUnits);
   const diff = forecast - snapshot.shiftPlan;
   const percent = snapshot.shiftPlan > 0 ? (forecast / snapshot.shiftPlan) * 100 : null;
@@ -25,7 +32,7 @@ export function ForecastCard({ snapshot }: { snapshot: PlantSnapshot }) {
         {percent !== null ? ` (${formatInt(percent)}% плана)` : ''}
       </p>
       <p className='forecast__note'>
-        Простая экстраполяция текущего темпа выпуска. Это не ИИ-прогноз и не сценарный анализ «что если».
+        Экстраполяция среднего темпа с начала смены. Не учитывает будущие сбои и управленческие действия.
       </p>
     </section>
   );
