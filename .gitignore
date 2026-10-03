@@ -1,0 +1,12 @@
+# Локальные настройки и секреты
+.env
+.env.*
+!.env.example
+
+# Файлы операционной системы
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Журналы
+*.log
