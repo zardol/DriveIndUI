@@ -3,7 +3,7 @@ import staticFiles from '@fastify/static';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
-import { parseProductionConfig, type ProductionConfig } from '@kosta/shared';
+import { parseProductionConfig, type ProductionConfig } from '@driveindui/shared';
 import { SessionError, SessionStore } from './sessions.js';
 
 const controlSchema = z.discriminatedUnion('action', [
@@ -47,7 +47,7 @@ export async function buildApp(options: { store?: SessionStore; autoTick?: boole
     return reply.status(500).send({ error: 'INTERNAL_ERROR', message: 'Не удалось обработать запрос. Повторите попытку.' });
   });
 
-  app.get('/api/health', async () => ({ status: 'ok', version: '0.6.0', dataMode: 'synthetic' }));
+  app.get('/api/health', async () => ({ status: 'ok', version: '0.6.1', dataMode: 'synthetic' }));
 
   app.post('/api/sessions', async (request, reply) => {
     if (!z.object({}).strict().safeParse(request.body ?? {}).success) {

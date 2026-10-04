@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createEngine, compareEngine } from '@kosta/simulation';
+import { createEngine, compareEngine } from '@driveindui/simulation';
 import type { ComparisonJob, ComparisonReply } from './comparison.worker';
 import { runComparison } from './comparisonClient';
 import { AbortedError } from './api';

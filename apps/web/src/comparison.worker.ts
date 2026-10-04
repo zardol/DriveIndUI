@@ -1,5 +1,5 @@
-import { compareEngine, type Engine } from '@kosta/simulation';
-import type { ComparisonOptions, SessionComparison } from '@kosta/shared';
+import { compareEngine, type Engine } from '@driveindui/simulation';
+import type { ComparisonOptions, SessionComparison } from '@driveindui/shared';
 
 export interface ComparisonJob {
   engine: Engine;

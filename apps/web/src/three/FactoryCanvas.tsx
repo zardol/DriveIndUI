@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Vector3, type PerspectiveCamera } from 'three';
 import type { OrbitControls as OrbitControlsType } from 'three-stdlib';
-import type { SessionSnapshot, StationId, StationSnapshot, StationStatus } from '@kosta/shared';
+import type { SessionSnapshot, StationId, StationSnapshot, StationStatus } from '@driveindui/shared';
 import { EquipmentModel } from './EquipmentModel';
 import { stationCanAnimate, type FactoryLayout, type LayoutStation } from './factoryLayout';
 import { buildConveyorRoute, sampleConveyor, type ConveyorRoute } from './conveyorPath';

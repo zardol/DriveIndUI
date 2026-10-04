@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { type ConveyorRoute, sampleConveyor } from './conveyorPath';
 
-import type { ConveyorVehicleSnapshot } from '@kosta/shared';
+import type { ConveyorVehicleSnapshot } from '@driveindui/shared';
 
 export interface ConveyorBeltProps {
   route: ConveyorRoute;

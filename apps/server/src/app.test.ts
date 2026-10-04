@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildApp } from './app.js';
 import { SessionStore } from './sessions.js';
-import type { SessionSnapshot, SessionComparison } from '@kosta/shared';
-import { DEFAULT_PRODUCTION_CONFIG } from '@kosta/shared';
-import { advanceEngine, compareEngine, createEngine } from '@kosta/simulation';
+import type { SessionSnapshot, SessionComparison } from '@driveindui/shared';
+import { DEFAULT_PRODUCTION_CONFIG } from '@driveindui/shared';
+import { advanceEngine, compareEngine, createEngine } from '@driveindui/simulation';
 
 const apps: Awaited<ReturnType<typeof buildApp>>[] = [];
 afterEach(async () => { await Promise.all(apps.splice(0).map(app => app.close())); });

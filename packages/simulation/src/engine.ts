@@ -1,6 +1,6 @@
 /** Deterministic one-second conveyor: work, release, move, load, exit, supply.
  * Configuration is validated and copied once when a new shift is created. */
-import { STATIONS, CONVEYOR_SPEC } from '@kosta/shared';
+import { STATIONS, CONVEYOR_SPEC } from '@driveindui/shared';
 import type {
   HistoryPoint,
   Incident,
@@ -12,8 +12,8 @@ import type {
   StationStatus,
   ConveyorSnapshot,
   ProductionConfig
-} from '@kosta/shared';
-import { DEFAULT_PRODUCTION_CONFIG, parseProductionConfig } from '@kosta/shared';
+} from '@driveindui/shared';
+import { DEFAULT_PRODUCTION_CONFIG, parseProductionConfig } from '@driveindui/shared';
 import { createRng, nextRandom } from './prng';
 import type { RngState } from './prng';
 
@@ -199,7 +199,7 @@ export function createEngine(options: EngineOptions = {}): Engine {
     first.queue = INITIAL_QUEUED_UNITS;
     engine.introducedUnits = INITIAL_QUEUED_UNITS;
     engine.vehicles.push({
-      id: `KA-0001`,
+      id: `DI-0001`,
       serial: 1,
       distance: 0,
       stageIndex: 0,
@@ -429,7 +429,7 @@ function tick(engine: Engine): void {
         engine.introducedUnits += 1;
         const serial = engine.introducedUnits;
         engine.vehicles.push({
-          id: `KA-${String(serial).padStart(4, '0')}`,
+          id: `DI-${String(serial).padStart(4, '0')}`,
           serial,
           distance: 0,
           stageIndex: 0,

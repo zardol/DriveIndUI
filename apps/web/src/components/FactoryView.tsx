@@ -1,6 +1,6 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Box, Map, Maximize2, RotateCcw, Upload, Download, Focus } from 'lucide-react';
-import { STATIONS, type ConveyorVehicleSnapshot, type SessionSnapshot, type StationId } from '@kosta/shared';
+import { STATIONS, type ConveyorVehicleSnapshot, type SessionSnapshot, type StationId } from '@driveindui/shared';
 import { FlowDiagram } from './FlowDiagram';
 import { buildConveyorRoute } from '../three/conveyorPath';
 import { DEFAULT_LAYOUT, parseFactoryLayout, type FactoryLayout } from '../three/factoryLayout';
@@ -90,7 +90,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
   };
   const download = () => {
     const url = URL.createObjectURL(new Blob([JSON.stringify(DEFAULT_LAYOUT, null, 2)], { type: 'application/json' }));
-    const link = document.createElement('a'); link.href = url; link.download = 'kostaallur-layout.json'; link.click();
+    const link = document.createElement('a'); link.href = url; link.download = 'driveindui-layout.json'; link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const resetLayout = () => { loadingFile.current += 1; setLayout(DEFAULT_LAYOUT); setLayoutChanged(false); setLayoutError(null); camera('overview'); };

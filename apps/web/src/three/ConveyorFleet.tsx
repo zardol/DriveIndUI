@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Color, InstancedMesh, Mesh, Object3D } from 'three';
-import { CONVEYOR_SPEC, type ConveyorVehicleSnapshot } from '@kosta/shared';
+import { CONVEYOR_SPEC, type ConveyorVehicleSnapshot } from '@driveindui/shared';
 import { vehicleGeometry } from './VehicleModel';
 import { sampleConveyor, type ConveyorRoute } from './conveyorPath';
 import type { ConveyorMotion } from './conveyorMotion';

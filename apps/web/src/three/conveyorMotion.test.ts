@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { ConveyorVehicleSnapshot } from '@kosta/shared';
+import type { ConveyorVehicleSnapshot } from '@driveindui/shared';
 import { ConveyorMotion } from './conveyorMotion';
 
 const car = (serial: number, distance: number): ConveyorVehicleSnapshot => ({
-  id: `KA-${serial}`, serial, distance, speed: 0.5, stage: 'welding', state: 'moving', appearance: 'body', outcome: 'pending',
+  id: `DI-${serial}`, serial, distance, speed: 0.5, stage: 'welding', state: 'moving', appearance: 'body', outcome: 'pending',
 });
 
 describe('conveyor display interpolation', () => {
@@ -11,9 +11,9 @@ describe('conveyor display interpolation', () => {
     const motion = new ConveyorMotion();
     motion.ingest([car(1, 39)], 'a', 78, 0, true, 4);
     motion.ingest([car(1, 42)], 'a', 330, 250, true, 4);
-    expect(motion.distance('KA-1', 250)).toBe(39);
-    expect(motion.distance('KA-1', 375)).toBe(40.5);
-    expect(motion.distance('KA-1', 10000)).toBe(42);
+    expect(motion.distance('DI-1', 250)).toBe(39);
+    expect(motion.distance('DI-1', 375)).toBe(40.5);
+    expect(motion.distance('DI-1', 10000)).toBe(42);
   });
 
   it('preserves minimum spacing even when a new unit enters during interpolation', () => {
@@ -21,9 +21,9 @@ describe('conveyor display interpolation', () => {
     motion.ingest([car(1, 3)], 'a', 6, 0, true, 4);
     motion.ingest([car(1, 8), car(2, 2)], 'a', 16, 250, true, 4);
     for (let t = 250; t <= 750; t += 10) {
-      expect(motion.distance('KA-1', t)! - motion.distance('KA-2', t)!).toBeGreaterThanOrEqual(4);
-      expect(motion.distance('KA-1', t)).toBeLessThanOrEqual(8);
-      expect(motion.distance('KA-2', t)).toBeGreaterThanOrEqual(0);
+      expect(motion.distance('DI-1', t)! - motion.distance('DI-2', t)!).toBeGreaterThanOrEqual(4);
+      expect(motion.distance('DI-1', t)).toBeLessThanOrEqual(8);
+      expect(motion.distance('DI-2', t)).toBeGreaterThanOrEqual(0);
     }
   });
 
@@ -32,9 +32,9 @@ describe('conveyor display interpolation', () => {
     motion.ingest([car(1, 4)], 'a', 8, 0, true, 4);
     motion.ingest([car(1, 8)], 'a', 16, 250, true, 4);
     motion.ingest([car(1, 9)], 'a', 18, 300, false, 4);
-    expect(motion.distance('KA-1', 300)).toBe(9);
+    expect(motion.distance('DI-1', 300)).toBe(9);
     motion.ingest([car(1, 9)], 'a', 18, 550, false, 4);
-    expect(motion.distance('KA-1', 10000)).toBe(9);
+    expect(motion.distance('DI-1', 10000)).toBe(9);
   });
 
   it('keeps a compressed queue within authoritative bounds after a new admission', () => {
@@ -56,8 +56,8 @@ describe('conveyor display interpolation', () => {
     const motion = new ConveyorMotion();
     motion.ingest([car(1, 198)], 'a', 1480, 0, true, 4);
     motion.ingest([], 'a', 1490, 250, true, 4);
-    expect(motion.distance('KA-1', 250)).toBeUndefined();
+    expect(motion.distance('DI-1', 250)).toBeUndefined();
     motion.ingest([car(1, 0)], 'b', 0, 500, true, 4);
-    expect(motion.distance('KA-1', 500)).toBe(0);
+    expect(motion.distance('DI-1', 500)).toBe(0);
   });
 });

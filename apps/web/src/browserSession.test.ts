@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { BrowserSession } from './browserSession';
-import { createEngine, advanceEngine, getSnapshot } from '@kosta/simulation';
-import { DEFAULT_PRODUCTION_CONFIG } from '@kosta/shared';
+import { createEngine, advanceEngine, getSnapshot } from '@driveindui/simulation';
+import { DEFAULT_PRODUCTION_CONFIG } from '@driveindui/shared';
 
 describe('BrowserSession', () => {
   it('applies an isolated configuration on pause and retains it across resets, scenarios and forks', () => {

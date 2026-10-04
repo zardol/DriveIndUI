@@ -1,9 +1,9 @@
 import type { ApiError, ControlCommand, SessionSnapshot } from './types';
 import type { BrowserSession } from './browserSession';
 import { BROWSER_MODE } from './runtimeMode';
-import { parseProductionConfig, type ComparisonOptions, type SessionComparison } from '@kosta/shared';
+import { parseProductionConfig, type ComparisonOptions, type SessionComparison } from '@driveindui/shared';
 
-const SESSION_STORAGE_KEY = BROWSER_MODE ? 'kostaallur.browserSessionId' : 'kostaallur.sessionId';
+const SESSION_STORAGE_KEY = BROWSER_MODE ? 'driveindui.browserSessionId' : 'driveindui.sessionId';
 const REQUEST_TIMEOUT_MS = 8000;
 
 let browserSession: Promise<BrowserSession> | null = null;

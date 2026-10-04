@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ComparisonOptions, SessionComparison, SessionSnapshot } from '@kosta/shared';
+import type { ComparisonOptions, SessionComparison, SessionSnapshot } from '@driveindui/shared';
 import { AbortedError, compareSession, errorMessage } from '../api';
 import { ComparisonPanel } from './ComparisonPanel';
 

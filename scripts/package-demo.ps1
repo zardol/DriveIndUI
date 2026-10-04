@@ -17,7 +17,7 @@ node serve-demo.mjs
 pause
 '@ | Set-Content -LiteralPath (Join-Path $taskBundle 'start-demo.cmd') -Encoding ascii
 @'
-KostaAllur — офлайн-демонстрация
+DriveIndUI (Drive Industrial UI) — офлайн-демонстрация
 
 Нужен заранее установленный Node.js 22 или новее. На компьютерах команды установлен Node.js 24.
 Распакуйте весь архив. В Windows запустите start-demo.cmd.
@@ -41,7 +41,7 @@ layout-example.json — шаблон локальной схемы. Загруз
 Раздел «Решения» сравнивает продолжение смены, обслуживание окраски и резерв мощности сборки.
 Расчёт работает без интернета, не меняет текущую смену и использует заданные события учебной модели.
 '@ | Set-Content -LiteralPath (Join-Path $taskBundle 'README.txt') -Encoding utf8
-$taskZip = Join-Path $taskRoot '.local/releases/KostaAllur-offline.zip'
+$taskZip = Join-Path $taskRoot '.local/releases/DriveIndUI-offline.zip'
 Compress-Archive -Path (Join-Path $taskBundle '*') -DestinationPath $taskZip -Force
 Write-Output $taskZip
 Write-Output $taskBundle

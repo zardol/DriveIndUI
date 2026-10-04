@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { HistoricalDataset, HistoricalRecord } from '@kosta/shared';
+import type { HistoricalDataset, HistoricalRecord } from '@driveindui/shared';
 import '../history-viewer.css';
 
 const PAGE_SIZE = 20;

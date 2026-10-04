@@ -1,1 +1,1 @@
-export * from '@kosta/shared';
+export * from '@driveindui/shared';

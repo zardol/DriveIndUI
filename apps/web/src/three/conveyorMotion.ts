@@ -1,4 +1,4 @@
-import type { ConveyorVehicleSnapshot } from '@kosta/shared';
+import type { ConveyorVehicleSnapshot } from '@driveindui/shared';
 
 interface Track { from: number; to: number }
 

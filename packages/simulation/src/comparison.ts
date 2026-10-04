@@ -1,6 +1,6 @@
 import { advanceEngine, cloneEngine, applyConditions, getSnapshot } from './engine';
 import type { Engine, ScenarioEvent } from './engine';
-import type { ComparisonOptions, ComparisonResult, ComparisonAlternative, DecisionId } from '@kosta/shared';
+import type { ComparisonOptions, ComparisonResult, ComparisonAlternative, DecisionId } from '@driveindui/shared';
 
 export function compareEngine(source: Engine, options: ComparisonOptions): ComparisonResult {
   if (!options) throw new RangeError('Options are required');

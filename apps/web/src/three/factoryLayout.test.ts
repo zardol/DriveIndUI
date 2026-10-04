@@ -5,7 +5,7 @@ import {
   stationCanAnimate,
   queueSlots
 } from './factoryLayout';
-import type { StationSnapshot } from '@kosta/shared';
+import type { StationSnapshot } from '@driveindui/shared';
 
 describe('factoryLayout', () => {
   describe('parseFactoryLayout', () => {

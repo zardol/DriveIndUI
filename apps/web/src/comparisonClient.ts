@@ -1,4 +1,4 @@
-import type { SessionComparison } from '@kosta/shared';
+import type { SessionComparison } from '@driveindui/shared';
 import type { ComparisonJob, ComparisonReply } from './comparison.worker';
 import { AbortedError, NetworkError } from './api';
 
