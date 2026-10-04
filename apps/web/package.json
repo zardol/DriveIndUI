@@ -1,5 +1,5 @@
 {
-  "name": "@kosta/web",
+  "name": "@driveindui/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,8 +10,8 @@
     "preview:demo": "vite preview --mode demo --host 0.0.0.0 --port 4173"
   },
   "dependencies": {
-    "@kosta/shared": "*",
-    "@kosta/simulation": "*",
+    "@driveindui/shared": "*",
+    "@driveindui/simulation": "*",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
     "lucide-react": "^0.468.0",

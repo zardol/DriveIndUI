@@ -1,6 +1,6 @@
-import { createEngine, advanceEngine, getSnapshot, cloneEngine } from '@kosta/simulation';
-import type { Engine } from '@kosta/simulation';
-import type { ControlCommand, ScenarioId, SessionSnapshot, Speed } from '@kosta/shared';
+import { createEngine, advanceEngine, getSnapshot, cloneEngine } from '@driveindui/simulation';
+import type { Engine } from '@driveindui/simulation';
+import type { ControlCommand, ScenarioId, SessionSnapshot, Speed } from '@driveindui/shared';
 
 export interface BrowserSessionOptions {
   now?: () => number;

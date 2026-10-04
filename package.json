@@ -1,5 +1,5 @@
 {
-  "name": "kostaallur",
+  "name": "driveindui",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,13 +11,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "concurrently -k -n API,WEB \"npm run dev -w @kosta/server\" \"npm run dev -w @kosta/web\"",
+    "dev": "concurrently -k -n API,WEB \"npm run dev -w @driveindui/server\" \"npm run dev -w @driveindui/web\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "npm run typecheck && npm run build -w @kosta/web && npm run build -w @kosta/server",
+    "build": "npm run typecheck && npm run build -w @driveindui/web && npm run build -w @driveindui/server",
     "start": "node dist/server.mjs",
-    "build:demo": "npm run typecheck && npm run build:demo -w @kosta/web",
-    "preview:demo": "npm run preview:demo -w @kosta/web",
+    "build:demo": "npm run typecheck && npm run build:demo -w @driveindui/web",
+    "preview:demo": "npm run preview:demo -w @driveindui/web",
     "check": "npm run typecheck && npm test && npm run build && npm run build:demo"
   },
   "devDependencies": {

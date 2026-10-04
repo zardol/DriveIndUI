@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { createEngine, advanceEngine, getSnapshot, compareEngine, type Engine } from '@kosta/simulation';
-import type { ComparisonOptions, SessionComparison, ControlCommand, ScenarioId, SessionSnapshot, Speed } from '@kosta/shared';
+import { createEngine, advanceEngine, getSnapshot, compareEngine, type Engine } from '@driveindui/simulation';
+import type { ComparisonOptions, SessionComparison, ControlCommand, ScenarioId, SessionSnapshot, Speed } from '@driveindui/shared';
 
 interface Session {
   id: string;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { advanceEngine, createEngine, getSnapshot, SHIFT_PLAN, SHIFT_SECONDS } from './index';
-import { STATIONS } from '@kosta/shared';
-import type { PlantSnapshot, ScenarioId, StationId, StationSnapshot } from '@kosta/shared';
+import { STATIONS } from '@driveindui/shared';
+import type { PlantSnapshot, ScenarioId, StationId, StationSnapshot } from '@driveindui/shared';
 
 const SCENARIOS: readonly ScenarioId[] = ['normal', 'equipment', 'bottleneck'];
 

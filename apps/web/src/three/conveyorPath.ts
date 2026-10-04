@@ -1,5 +1,5 @@
 import type { FactoryLayout } from './factoryLayout';
-import { CONVEYOR_SPEC } from '@kosta/shared';
+import { CONVEYOR_SPEC } from '@driveindui/shared';
 
 export type Point2 = [number, number];
 

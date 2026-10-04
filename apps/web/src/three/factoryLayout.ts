@@ -1,4 +1,4 @@
-import { STATIONS, type StationId, type StationSnapshot } from '@kosta/shared';
+import { STATIONS, type StationId, type StationSnapshot } from '@driveindui/shared';
 
 export interface LayoutStation {
   id: StationId;

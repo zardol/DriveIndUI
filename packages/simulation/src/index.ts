@@ -24,4 +24,4 @@ export type {
   StationId,
   StationSnapshot,
   StationStatus,
-} from '@kosta/shared';
+} from '@driveindui/shared';

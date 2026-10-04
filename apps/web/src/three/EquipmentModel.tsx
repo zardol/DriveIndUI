@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 
 
-import type { StationSnapshot } from '@kosta/shared';
+import type { StationSnapshot } from '@driveindui/shared';
 
 export interface EquipmentModelProps {
   station: StationSnapshot;

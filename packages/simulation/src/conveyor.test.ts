@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createEngine, advanceEngine, cloneEngine, getSnapshot, SHIFT_SECONDS } from './engine';
-import { CONVEYOR_SPEC, STATIONS } from '@kosta/shared';
+import { CONVEYOR_SPEC, STATIONS } from '@driveindui/shared';
 
 describe('per-vehicle accumulating conveyor', () => {
   it('requires travel and a full processing cycle before transferring the first ID', () => {
@@ -9,13 +9,13 @@ describe('per-vehicle accumulating conveyor', () => {
     expect(engine.vehicles[0].distance).toBe(39.5);
     expect(engine.stations[0].inProcess).toBe(false);
     advanceEngine(engine, 1);
-    expect(engine.stations[0]).toMatchObject({ inProcess: true, workDone: 0, activeVehicleId: 'KA-0001' });
+    expect(engine.stations[0]).toMatchObject({ inProcess: true, workDone: 0, activeVehicleId: 'DI-0001' });
     advanceEngine(engine, 239);
     expect(engine.stations[0].completed).toBe(0);
     expect(engine.vehicles[0].distance).toBe(40);
     advanceEngine(engine, 1);
     expect(engine.stations[0].completed).toBe(1);
-    expect(engine.vehicles[0]).toMatchObject({ id: 'KA-0001', distance: 40.5, stageIndex: 1 });
+    expect(engine.vehicles[0]).toMatchObject({ id: 'DI-0001', distance: 40.5, stageIndex: 1 });
     expect(engine.stations[1].workDone).toBe(0);
   });
 
@@ -69,11 +69,11 @@ describe('per-vehicle accumulating conveyor', () => {
     expect(outcome).not.toBe('pending');
     advanceEngine(engine, 78);
     expect(engine.goodUnits + engine.rejectedUnits).toBe(0);
-    expect(engine.vehicles[0]).toMatchObject({ id: 'KA-0001', distance: 199.5, outcome });
+    expect(engine.vehicles[0]).toMatchObject({ id: 'DI-0001', distance: 199.5, outcome });
     advanceEngine(engine, 1);
     expect(engine.elapsedSeconds).toBe(1476);
     expect(engine.goodUnits + engine.rejectedUnits).toBe(1);
-    expect(engine.vehicles.some(v => v.id === 'KA-0001')).toBe(false);
+    expect(engine.vehicles.some(v => v.id === 'DI-0001')).toBe(false);
   });
 
   it('holds an actual queue behind stopped painting, then drains the same IDs', () => {

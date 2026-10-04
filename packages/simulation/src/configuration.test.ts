@@ -1,7 +1,7 @@
 import { expect, test, describe } from 'vitest';
 import { createEngine, advanceEngine, getSnapshot, cloneEngine } from './engine';
 import { compareEngine } from './comparison';
-import { DEFAULT_PRODUCTION_CONFIG, STATIONS, CONVEYOR_SPEC } from '@kosta/shared';
+import { DEFAULT_PRODUCTION_CONFIG, STATIONS, CONVEYOR_SPEC } from '@driveindui/shared';
 
 describe('Configuration Integration', () => {
   test('default configuration matches public geometry and station definitions', () => {

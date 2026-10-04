@@ -57,7 +57,7 @@ export default function App() {
 
               <section id='overview' className='section hero' aria-labelledby='page-title'>
                 <div className='hero__text'>
-                  <p className='eyebrow'>KostaAllur / Центр управления производством</p>
+                  <p className='eyebrow'>DriveIndUI / Центр управления производством</p>
                   <h1 id='page-title'>Вся линия. Одна картина.</h1>
                   <p className='hero__lead'>
                     От кузова до готового автомобиля: выпуск, загрузка и причины задержек.

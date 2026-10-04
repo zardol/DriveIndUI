@@ -5,8 +5,8 @@ import type {
   ComparisonOptions,
   DecisionId,
   HistoryPoint,
-} from '@kosta/shared';
-import { SCENARIOS } from '@kosta/shared';
+} from '@driveindui/shared';
+import { SCENARIOS } from '@driveindui/shared';
 import { formatClock, formatInt, formatSigned } from '../format';
 import {
   RefreshCw,

@@ -1,5 +1,5 @@
 {
-  "name": "@kosta/server",
+  "name": "@driveindui/server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "@fastify/static": "^10.1.5",
-    "@kosta/shared": "*",
-    "@kosta/simulation": "*",
+    "@driveindui/shared": "*",
+    "@driveindui/simulation": "*",
     "fastify": "^5.0.0",
     "zod": "^3.24.0"
   }

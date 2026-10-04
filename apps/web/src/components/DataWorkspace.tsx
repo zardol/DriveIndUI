@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { DEFAULT_PRODUCTION_CONFIG, HISTORY_CSV_TEMPLATE, parseHistoricalCsv, parseProductionConfig, STATIONS } from '@kosta/shared';
-import type { ControlCommand, HistoricalDataset, ProductionConfig, SessionSnapshot } from '@kosta/shared';
+import { DEFAULT_PRODUCTION_CONFIG, HISTORY_CSV_TEMPLATE, parseHistoricalCsv, parseProductionConfig, STATIONS } from '@driveindui/shared';
+import type { ControlCommand, HistoricalDataset, ProductionConfig, SessionSnapshot } from '@driveindui/shared';
 import { formatDuration, formatInt } from '../format';
 import { BROWSER_MODE } from '../runtimeMode';
 import '../data-workspace.css';

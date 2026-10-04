@@ -20,8 +20,8 @@ export function TopBar({ connection, sessionId, dataLabel }: TopBarProps) {
   return (
     <header className='topbar'>
       <div className='topbar__brand'>
-        <span className='topbar__name'>KostaAllur</span>
-        <span className='topbar__sub'>Цифровой двойник завода</span>
+        <span className='topbar__name'>DriveIndUI</span>
+        <span className='topbar__sub'>Drive Industrial UI</span>
       </div>
       <div className='topbar__right'>
         <span className='demo-badge'>
