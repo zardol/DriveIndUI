@@ -8,7 +8,7 @@
 .plant-view button:disabled { cursor: not-allowed; opacity: .45; }
 .plant-switch button { background: transparent; border-color: transparent; font-weight: 650; }
 .plant-switch button[aria-pressed=true] { color: #fff; background: #245f52; box-shadow: 0 2px 5px #1b49341c; }
-.plant-viewport { height: 560px; position: relative; overflow: hidden; isolation: isolate; background: #e8ede6; }
+.plant-viewport { height: 650px; position: relative; overflow: hidden; isolation: isolate; background: #d8e3e2; }
 .plant-viewport canvas { touch-action: none; }
 .plant-label-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .plant-label-anchor { position: absolute; left: 0; top: 0; visibility: hidden; }
@@ -19,7 +19,12 @@
 .plant-overlay small { font-size: 10px; color: #6c7c73; }
 .plant-loading, .plant-error { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; color: #42695b; font-size: 13px; padding: 30px; text-align: center; }
 .plant-loading strong { font-size: 18px; }
-.plant-view .plant-label { display: grid; gap: 4px; white-space: nowrap; box-shadow: 0 3px 14px #233c3420; padding: 7px 10px; font-size: 12px; background: #fffef5ee; border-color: #c9d5c9; }
+.plant-view .plant-label { display: grid; gap: 3px; white-space: nowrap; box-shadow: 0 3px 14px #233c3420; padding: 5px 8px; font-size: 11px; background: #fffef5ed; border-color: #aebfb8; }
+.plant-label small:last-child { display: none; }
+.plant-label.is-selected small:last-child { display: block; }
+.plant-model-key { position: absolute; bottom: 14px; left: 20px; display: flex; gap: 12px; flex-wrap: wrap; padding: 9px 12px; border: 1px solid #b6cac2; background: #f8fcf1e8; border-radius: 8px; font-size: 10px; color: #35544a; pointer-events: none; }
+.plant-model-key span { display: inline-flex; align-items: center; gap: 5px; }
+.plant-model-key i { width: 8px; height: 8px; border-radius: 2px; }
 .plant-view .plant-label.is-selected { border: 2px solid #266c5b; background: #f4fff7; }
 .plant-label span { display: flex; align-items: center; gap: 5px; font-weight: 700; }
 .plant-label i, .plant-station-dot { flex-shrink: 0; display: inline-block; width: 7px; height: 7px; border-radius: 50%; }

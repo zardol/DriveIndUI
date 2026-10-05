@@ -1,3 +1,5 @@
+import { summarizePlan, validateProductionPlan, type ProductionPlan } from './planning';
+
 export type ProductionStationId = 'welding' | 'painting' | 'assembly' | 'quality';
 
 export interface ProductionConfig {
@@ -12,6 +14,7 @@ export interface ProductionConfig {
   supplyIntervalSeconds: number;
   rejectRate: number;
   conveyorSpeed: number;
+  productionPlan?: ProductionPlan;
   stations: {
     id: ProductionStationId;
     cycleSeconds: number;
@@ -125,6 +128,7 @@ export function parseProductionConfig(value: unknown): ImportResult<ProductionCo
   const raw = value as Record<string, unknown>;
   const ALLOWED_CONFIG_KEYS = new Set([
     'schemaVersion',
+    'productionPlan',
     'name',
     'source',
     'shiftSeconds',
@@ -367,6 +371,12 @@ export function parseProductionConfig(value: unknown): ImportResult<ProductionCo
     }
   }
 
+  const planResult = raw.productionPlan === undefined ? undefined : validateProductionPlan(raw.productionPlan);
+  for (const error of planResult?.errors ?? []) addIssue('productionPlan', error);
+  if (planResult?.value) {
+    if (cleanShiftSeconds !== 28800) addIssue('shiftSeconds', 'Месячный план кейса требует смену 8 часов.');
+    if (cleanShiftPlan !== summarizePlan(planResult.value).shiftTarget) addIssue('shiftPlan', 'План смены должен соответствовать распределению месячного плана.');
+  }
   if (issues.length > 0 || !cleanSource || !cleanStations) {
     return { ok: false, issues };
   }
@@ -383,7 +393,8 @@ export function parseProductionConfig(value: unknown): ImportResult<ProductionCo
     supplyIntervalSeconds: cleanSupplyInterval,
     rejectRate: cleanRejectRate,
     conveyorSpeed: cleanConveyorSpeed,
-    stations: cleanStations
+    stations: cleanStations,
+    ...(planResult?.value ? { productionPlan: planResult.value } : {})
   };
 
   const warnings: string[] = [];

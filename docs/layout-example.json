@@ -1,53 +1,53 @@
 {
   "version": 1,
-  "title": "Учебная схема цеха",
+  "title": "Маршрут кейса · условная планировка",
   "units": "relative",
   "floor": {
-    "width": 100,
-    "depth": 96
+    "width": 52,
+    "depth": 48
   },
   "stations": [
     {
       "id": "welding",
       "position": [
-        28,
-        -33
+        12,
+        -15
       ],
       "rotation": 0
     },
     {
       "id": "painting",
       "position": [
-        -28,
-        -11
+        -12,
+        -5
       ],
       "rotation": 180
     },
     {
       "id": "assembly",
       "position": [
-        28,
-        11
+        12,
+        5
       ],
       "rotation": 0
     },
     {
       "id": "quality",
       "position": [
-        -28,
-        33
+        -12,
+        15
       ],
       "rotation": 180
     }
   ],
   "terminals": {
     "supply": [
-      -44,
-      -33
+      -22,
+      -15
     ],
     "finished": [
-      8,
-      42
+      4,
+      20
     ]
   }
 }

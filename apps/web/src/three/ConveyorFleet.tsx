@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Color, InstancedMesh, Mesh, Object3D } from 'three';
-import { CONVEYOR_SPEC, type ConveyorVehicleSnapshot } from '@driveindui/shared';
+import { CONVEYOR_SPEC, PRODUCT_MODELS, type ConveyorVehicleSnapshot } from '@driveindui/shared';
 import { vehicleGeometry } from './VehicleModel';
 import { sampleConveyor, type ConveyorRoute } from './conveyorPath';
 import type { ConveyorMotion } from './conveyorMotion';
@@ -44,7 +44,7 @@ export function ConveyorFleet({ vehicles, route, motion, selectedId, onSelect }:
         object.updateMatrix();
         mesh.setMatrixAt(index, object.matrix);
         if (part === 'body') {
-          color.set(vehicle.outcome === 'rejected' ? '#b85645' : painted ? PALETTE[(vehicle.serial - 1) % PALETTE.length] : '#a5afb2');
+          color.set(vehicle.outcome === 'rejected' ? '#b85645' : painted ? PRODUCT_MODELS.find(model => model.id === vehicle.modelId)?.color ?? PALETTE[(vehicle.serial - 1) % PALETTE.length] : '#a5afb2');
           mesh.setColorAt(index, color);
         }
       }
@@ -67,8 +67,8 @@ export function ConveyorFleet({ vehicles, route, motion, selectedId, onSelect }:
     {PARTS.map(part => <instancedMesh key={`${part}-${capacity}`} ref={mesh => { if (mesh) meshes.current.set(part, mesh); else meshes.current.delete(part); }}
       args={[geometries[part], undefined, capacity]} frustumCulled={false} castShadow={part === 'body' || part === 'tires'} receiveShadow
       onClick={event => { const id = event.instanceId; if (id !== undefined && vehicles[id]) { event.stopPropagation(); onSelect(vehicles[id].id); } }}>
-      <meshStandardMaterial color={part === 'body' ? '#ffffff' : part === 'glass' ? '#193c48' : part === 'hubs' ? '#aabbc3' : part === 'headlights' ? '#f1f5db' : part === 'taillights' ? '#b94733' : '#243337'}
-        roughness={part === 'tires' ? 0.85 : 0.4} metalness={part === 'body' || part === 'hubs' ? 0.4 : 0.15} />
+      <meshPhysicalMaterial color={part === 'body' ? '#ffffff' : part === 'glass' ? '#193c48' : part === 'hubs' ? '#d2dde0' : part === 'headlights' ? '#f1f5db' : part === 'taillights' ? '#b94733' : '#243337'}
+        roughness={part === 'tires' ? 0.85 : 0.28} metalness={part === 'body' || part === 'hubs' ? 0.5 : 0.15} clearcoat={part === 'body' ? .65 : 0} />
     </instancedMesh>)}
     <mesh ref={marker} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
       <ringGeometry args={[1.7, 1.87, 32]} /><meshBasicMaterial color='#e5aa36' depthWrite={false} />

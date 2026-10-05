@@ -1,5 +1,7 @@
 import type { ProductionConfig, ProductionStationId } from './production';
 export * from './production';
+export * from './planning';
+export * from './caseData';
 
 export type StationId = ProductionStationId;
 export type StationStatus = 'running' | 'idle' | 'blocked' | 'stopped' | 'warning';
@@ -71,6 +73,7 @@ export const CONVEYOR_SPEC = {
 } as const;
 
 export interface ConveyorVehicleSnapshot {
+  modelId?: import('./planning').ProductModelId;
   id: string;
   serial: number;
   distance: number;
@@ -90,6 +93,7 @@ export interface ConveyorSnapshot {
 }
 
 export interface PlantSnapshot {
+  products?: import('./planning').ProductProgress[];
   config: ProductionConfig;
   scenario: ScenarioId;
   elapsedSeconds: number;
@@ -133,6 +137,7 @@ export interface ComparisonOptions {
 export type DecisionId = 'baseline' | 'maintenance' | 'reserve';
 
 export interface ComparisonAlternative {
+  products?: import('./planning').ProductProgress[];
   id: DecisionId;
   title: string;
   description: string;

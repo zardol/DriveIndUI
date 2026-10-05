@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { DEFAULT_PRODUCTION_CONFIG, HISTORY_CSV_TEMPLATE, parseHistoricalCsv, parseProductionConfig, STATIONS } from '@driveindui/shared';
+import { DEFAULT_PRODUCTION_CONFIG, HISTORY_CSV_TEMPLATE, parseHistoricalCsv, parseProductionConfig, STATIONS, PRODUCT_MODELS, summarizePlan } from '@driveindui/shared';
 import type { ControlCommand, HistoricalDataset, ProductionConfig, SessionSnapshot } from '@driveindui/shared';
 import { formatDuration, formatInt } from '../format';
 import { BROWSER_MODE } from '../runtimeMode';
@@ -155,13 +155,17 @@ export function DataWorkspace({ snapshot, mode, pending, offline, onModeChange, 
     {warnings.length > 0 && <ul className='data-workspace__hint'>{warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>}
     {mode === 'history' && (dataset
       ? <Suspense fallback={<p role='status'>Загружаем просмотр истории…</p>}><HistoricalViewer key={datasetVersion} dataset={dataset} /></Suspense>
-      : <p className='empty'>Загрузите файл или откройте учебный пример. Реальные исходные данные ожидаются 5 октября.</p>)}
+      : <p className='empty'>Загрузите временной ряд CSV или откройте учебный пример. Таблицы кейса за 1–2 октября доступны выше в «Исходных показателях»; они не преобразуются в вымышленную посекундную историю.</p>)}
   </section>;
 }
 
 function ConfigSummary({ config, title }: { config: ProductionConfig; title: string }) {
   return <div className='data-workspace__summary'>
-    <h3>{title}: {config.name}</h3><p>{config.source.label} · {config.source.kind === 'synthetic' ? 'синтетические параметры' : 'параметры из файла, не проверены'}</p>
+    <h3>{title}: {config.name}</h3><p>{config.source.label} · {config.source.kind === 'synthetic' ? 'синтетические параметры' : 'параметры для сценарного расчёта; происхождение загруженного файла не проверяется'}</p>
+    {config.productionPlan && <div className='data-workspace__hint'>
+      <strong>Месячный план: {formatInt(config.productionPlan.monthlyTarget)} авто · {config.productionPlan.workingDays} рабочих дней × 2 смены · смена №{config.productionPlan.shiftIndex + 1}</strong>
+      <p>{config.productionPlan.models.map(model => `${PRODUCT_MODELS.find(item => item.id === model.id)?.name}: ${formatInt(model.monthlyUnits)}`).join(' · ')}. Не распределено: {formatInt(summarizePlan(config.productionPlan).unallocated)} авто.</p>
+    </div>}
     <dl className='data-workspace__metrics'>
       <div><dt>Длительность</dt><dd>{formatDuration(config.shiftSeconds)} ({config.shiftSeconds} с)</dd></div>
       <div><dt>План</dt><dd>{formatInt(config.shiftPlan)} авто</dd></div>

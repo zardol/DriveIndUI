@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { buildApp } from './app.js';
 import { SessionStore } from './sessions.js';
 import type { SessionSnapshot, SessionComparison } from '@driveindui/shared';
-import { DEFAULT_PRODUCTION_CONFIG } from '@driveindui/shared';
+import { DEFAULT_PRODUCTION_CONFIG, createCaseConfig } from '@driveindui/shared';
 import { advanceEngine, compareEngine, createEngine } from '@driveindui/simulation';
 
 const apps: Awaited<ReturnType<typeof buildApp>>[] = [];
@@ -39,7 +39,7 @@ describe('session API', () => {
     expect(result).toMatchObject({ shiftPlan: 9, toSeconds: 3601, revision: 3 });
     expect(result.assumptions.join(' ')).toContain('3.5%');
     expect(result.alternatives.every(alt => alt.history.at(-1)?.elapsedSeconds === 3601)).toBe(true);
-    const other = await create(); expect(other.config).toEqual(DEFAULT_PRODUCTION_CONFIG);
+    const other = await create(); expect(other.config).toEqual(createCaseConfig());
   });
   it('compares exact current state without changing the session and increments reset revisions', async () => {
     const { app, create, advance } = await setup();
@@ -52,7 +52,7 @@ describe('session API', () => {
     const response = await app.inject({ method: 'POST', url: `${url}/comparison`, payload: options });
     expect(response.statusCode).toBe(200);
     expect(response.headers['cache-control']).toBe('no-store');
-    const engine = createEngine({ scenario: 'equipment' }); advanceEngine(engine, 240);
+    const engine = createEngine({ scenario: 'equipment', config: createCaseConfig() }); advanceEngine(engine, 240);
     expect(response.json<SessionComparison>()).toEqual({ ...compareEngine(engine, options), sessionId: s.sessionId, revision: 1 });
     expect((await app.inject(url)).json()).toEqual(before);
     const reset = (await app.inject({ method: 'POST', url: `${url}/control`, payload: { action: 'reset' } })).json();

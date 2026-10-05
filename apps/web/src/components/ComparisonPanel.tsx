@@ -6,7 +6,7 @@ import type {
   DecisionId,
   HistoryPoint,
 } from '@driveindui/shared';
-import { SCENARIOS } from '@driveindui/shared';
+import { SCENARIOS, PRODUCT_MODELS, summarizePlan } from '@driveindui/shared';
 import { formatClock, formatInt, formatSigned } from '../format';
 import {
   RefreshCw,
@@ -215,7 +215,7 @@ export function ComparisonPanel({
   const scenarioMeta = result
     ? SCENARIOS.find((s) => s.id === result.scenario)
     : null;
-  const scenarioTitle = scenarioMeta ? scenarioMeta.name : (result?.scenario ?? '');
+  const scenarioTitle = snapshot.config.productionPlan ? (result?.scenario === 'equipment' ? 'Камера-02 · 40 мин' : result?.scenario === 'bottleneck' ? 'Конвейер-03 · 55 мин' : 'Без остановок') : scenarioMeta ? scenarioMeta.name : (result?.scenario ?? '');
 
   const alternativesOrder: DecisionId[] = ['baseline', 'maintenance', 'reserve'];
   const sortedAlternatives = result
@@ -399,6 +399,14 @@ export function ComparisonPanel({
                   </div>
 
                   <p className="cmp-card__desc">{alt.description}</p>
+                  {alt.products && <div className='cmp-products'>
+                    {alt.products.map(product => <p key={product.id}><span>{PRODUCT_MODELS.find(model => model.id === product.id)?.name}</span><strong>{product.goodUnits} / {product.plannedUnits}</strong></p>)}
+                    <small>Годные к заказу модели за выбранную смену</small>
+                  </div>}
+                  {snapshot.config.productionPlan && <p className='cmp-month-projection'>
+                    Повторение такой смены весь месяц: <strong>{formatInt(alt.goodUnits * summarizePlan(snapshot.config.productionPlan).shifts)} авто</strong>.
+                    {' '}Грубая экстраполяция, не прогноз; квоты смен и перенос НЗП могут отличаться.
+                  </p>}
 
                   <div className="cmp-card__metrics">
                     <div className="cmp-metric">
