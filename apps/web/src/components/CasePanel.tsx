@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, CalendarDays, CheckCircle2, CircleAlert, Factory, Target } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import { CASE_DOWNTIMES, CASE_LINES, CASE_PLAN, CASE_SOURCE, PRODUCT_MODELS, caseStationMetrics,
   createCaseConfig, estimateCaseOee, summarizePlan, validateProductionPlan,
   type ControlCommand, type ProductionPlan, type SessionSnapshot } from '@driveindui/shared';
@@ -7,10 +7,9 @@ import '../case-panel.css';
 
 const number = (value: number, digits = 0) => Number.isFinite(value) ? value.toLocaleString('ru-RU', { maximumFractionDigits: digits }) : '—';
 const stationName = { welding: 'Сварка', painting: 'Окраска', assembly: 'Сборка' };
-export function CasePanel({ snapshot, disabled, onCommand }: {
-  snapshot: SessionSnapshot; disabled: boolean; onCommand: (command: ControlCommand) => void;
+export function CasePanel({ snapshot, disabled, onCommand, view: tab }: {
+  snapshot: SessionSnapshot; disabled: boolean; onCommand: (command: ControlCommand) => void; view: 'plan' | 'facts' | 'risks';
 }) {
-  const [tab, setTab] = useState<'plan' | 'facts' | 'risks'>('plan');
   const [plan, setPlan] = useState<ProductionPlan>(() => structuredClone(snapshot.config.productionPlan ?? CASE_PLAN));
   const [date, setDate] = useState('all');
   const activeKey = JSON.stringify(snapshot.config.productionPlan ?? null);
@@ -21,35 +20,24 @@ export function CasePanel({ snapshot, disabled, onCommand }: {
   const incidents = CASE_DOWNTIMES.filter(row => date === 'all' || row.date === date);
   const painting = caseStationMetrics('painting');
 
-  return <section id='case-plan' className='case-panel section' aria-labelledby='case-title'>
-    <div className='case-panel__hero'>
-      <div><p className='case-panel__eyebrow'><Factory size={15} /> АЛЛЮР / ОКТЯБРЬ 2026</p>
-        <h2 id='case-title'>От плана месяца —<br />к каждой машине.</h2><p>Три модели. Две смены. Один управляемый поток.</p><a className='case-scene-link' href='#flow'>Открыть 3D-цех <ArrowUpRight size={15} /></a></div>
-      <div className='case-panel__source'><span className='case-source-dot' />Тестовый кейс организатора<small>Данные за 1–2 октября · получены 5 октября</small><small>Расчёты и 3D — модель, без подключения к заводу</small></div>
-    </div>
-    <div className='case-metrics'>
-      <div><Target size={18} /><span>Цель месяца, минимум</span><strong>5 500 <small>авто</small></strong></div>
-      <div><Factory size={18} /><span>План моделей из кейса</span><strong>4 800 <small>авто</small></strong></div>
-      <div className='case-metrics__warning'><CircleAlert size={18} /><span>Не распределено в исходнике</span><strong>700 <small>авто</small></strong></div>
-      <div><CalendarDays size={18} /><span>Режим производства</span><strong>2 × 8 <small>часов</small></strong></div>
-    </div>
-    <div className='case-tabs' role='group' aria-label='Аналитика кейса'>
-      <button type='button' aria-pressed={tab === 'plan'} onClick={() => setTab('plan')}>01 / Производственный план</button>
-      <button type='button' aria-pressed={tab === 'facts'} onClick={() => setTab('facts')}>02 / Исходные показатели</button>
-      <button type='button' aria-pressed={tab === 'risks'} onClick={() => setTab('risks')}>03 / Риски и эффект</button>
-    </div>
+  return <section className={`case-panel section case-panel--${tab}`} aria-label={tab === 'plan' ? 'Заказы на октябрь' : tab === 'facts' ? 'Исходные показатели' : 'Допущения и эффект'}>
+    {tab === 'plan' && <div className='plan-totals'>
+      <div><span>Цель октября</span><strong>{number(summary.target)} <small>авто</small></strong></div>
+      <div><span>Назначено моделям</span><strong>{number(summary.allocated)} <small>авто</small></strong></div>
+      <div className={summary.unallocated ? 'is-warning' : ''}><span>Не распределено</span><strong>{number(summary.unallocated)} <small>авто</small></strong></div>
+    </div>}
     {tab === 'plan' && <div className='case-panel__body'>
-      <div className='case-plan-heading'><div><h3>План → смена → модель автомобиля</h3><p>Исходные заказы сохранены. Изменения ниже создают сценарий распределения.</p></div>
+      <div className='case-plan-heading'><div><h2>Заказы и календарь</h2></div>
         <span className={`case-state ${active ? 'is-active' : ''}`}>{active ? <><CheckCircle2 size={15} /> План действует в симуляции</> : 'Предпросмотр · ещё не применён'}</span></div>
       <div className='case-plan-controls'>
         <label>Рабочих дней в месяце<input type='number' min={1} max={31} value={plan.workingDays} onChange={event => {
           const days = Number(event.target.value); setPlan(current => ({ ...current, workingDays: days, shiftIndex: Math.min(current.shiftIndex, Math.max(0, days * 2 - 1)) }));
         }} /></label>
         <label>Порядковая смена<input type='number' min={1} max={Math.max(1, plan.workingDays * 2)} value={plan.shiftIndex + 1} onChange={event => setPlan(current => ({ ...current, shiftIndex: Number(event.target.value) - 1 }))} /></label>
-        <div><span>Календарь — допущение</span><strong>{number(plan.workingDays * 2)} смен по 8 часов</strong><small>22 рабочих дня по умолчанию; в PDF число дней и даты смен не указаны.</small></div>
+        <div><strong>{number(plan.workingDays * 2)} смен по 8 часов</strong><small>22 рабочих дня — допущение; календарь в кейсе не задан.</small></div>
       </div>
-      <div className='case-table-wrap'><table className='case-table'><caption>План годного выпуска и результаты выбранной модельной смены</caption>
-        <thead><tr><th>Модель</th><th>Из кейса / месяц</th><th>Сценарий / месяц</th><th>На эту смену</th><th>Годные / в линии</th></tr></thead><tbody>
+      <div className='case-table-wrap'><table className='case-table'><caption className='sr-only'>План годного выпуска по моделям</caption>
+        <thead><tr><th>Модель</th><th>В кейсе</th><th>Заказ / месяц</th><th>На смену</th><th>Годные / НЗП</th></tr></thead><tbody>
           {PRODUCT_MODELS.map(model => {
             const monthly = plan.models.find(item => item.id === model.id)!, quota = summary.models.find(item => item.id === model.id)!;
             const progress = active ? snapshot.products?.find(item => item.id === model.id) : undefined;
@@ -67,26 +55,26 @@ export function CasePanel({ snapshot, disabled, onCommand }: {
         <div><span>Требуемый средний такт</span><strong>{number(summary.requiredTaktSeconds, 1)} <small>с / годное авто</small></strong><small>Без брака, простоев и заполнения линии</small></div>
       </div>
       <p className={summary.unallocated > 0 ? 'case-alert' : 'case-success'}>{summary.unallocated > 0
-        ? `До цели не назначены ${number(summary.unallocated)} автомобилей. Они учитываются в отклонении от плана, но не превращаются в вымышленные заказы. Распределите их между моделями для проверки сценария.`
-        : 'Месячная цель обеспечена заказами. Проверьте, успеет ли линия выпустить их с учётом такта и потерь.'}</p>
+        ? `Распределите ещё ${number(summary.unallocated)} авто между моделями. Неназначенный объём не запускается в производство.`
+        : 'Цель обеспечена заказами. Проверьте выполнимость в разделе «Решения».'}</p>
       {!!validation.errors.length && <p role='alert' className='case-alert'>{validation.errors.join(' ')}</p>}
       <div className='case-actions'><button className='btn btn--primary' type='button' disabled={disabled || !validation.value} onClick={() => {
         if (validation.value) onCommand({ action: 'setConfiguration', config: createCaseConfig(validation.value) });
-      }}>Применить план и начать смену на паузе <ArrowUpRight size={16} /></button>
+      }}>Применить и сбросить смену <ArrowUpRight size={16} /></button>
         <button className='btn' type='button' disabled={disabled} onClick={() => setPlan(structuredClone(CASE_PLAN))}>Вернуть значения кейса</button></div>
-      <p className='case-note'>Каждая машина получает модель и занимает место в заказе. После выхода брака возможен повторный запуск. Квоты всех смен в сумме точно равны месячному плану; незавершённые заказы автоматически на следующую смену не переносятся.</p>
+      <details className='case-details'><summary>Как план влияет на выпуск</summary><p>Применение начинает смену на паузе. Машина резервирует заказ своей модели; после выхода брака возможна замена. Квоты всех смен в сумме равны месячному плану. Перенос НЗП и недовыпуска между сменами пока не моделируется.</p></details>
     </div>}
     {tab === 'facts' && <div className='case-panel__body'>
-      <div className='case-plan-heading'><div><h3>Исходные показатели без подмены</h3><p>{CASE_SOURCE}.</p></div>
+      <div className='case-plan-heading'><div><h2>Работа линий и качество</h2><p>{CASE_SOURCE}.</p></div>
         <label className='case-date'>Дата<select value={date} onChange={event => setDate(event.target.value)}><option value='all'>Оба дня</option><option value='2026-10-01'>1 октября</option><option value='2026-10-02'>2 октября</option></select></label></div>
       <div className='case-table-wrap'><table className='case-table'><caption>Работа линий и качество · значения из PDF, доля брака рассчитана по счётчикам</caption><thead><tr><th>Дата / линия</th><th>План</th><th>Факт</th><th>Работа, ч</th><th>Загрузка</th><th>Брак, ед.</th><th>Доля брака / ≤ 2%</th></tr></thead>
         <tbody>{rows.map(row => <tr key={`${row.date}-${row.station}`}><th><small>{row.date.slice(8)}.10.2026</small>{row.line}</th><td>{row.plan}</td><td>{row.actual}</td><td>{number(row.operatingHours, 1)}</td><td>{row.loadPercent}%</td><td>{row.rejects}</td>
           <td className={row.rejects / row.actual > .02 ? 'case-breach' : ''}>{number(row.rejects / row.actual * 100, 2)}%<small>в PDF: {number(row.reportedRejectPercent, 1)}%</small></td></tr>)}</tbody></table></div>
-      <p className='case-note'>Это агрегаты по датам; номер смены отсутствует. Выпуск участков не суммируется в выпуск завода. Промежуточные дефекты не складываются с окончательным браком: нет данных о переделке и пересечении изделий.</p>
+      <details className='case-details'><summary>Как читать исходные показатели</summary><p>Агрегаты по датам, без номера смены. Выпуск участков не суммируется в выпуск завода. Промежуточные дефекты не складываются с окончательным браком: нет данных о переделке и пересечении изделий.</p></details>
       <h3>Журнал остановок оборудования</h3>
       <div className='case-table-wrap'><table className='case-table'><caption>Порог 60 минут в сутки — для критического оборудования; критичность в исходнике не указана</caption><thead><tr><th>Дата</th><th>Оборудование</th><th>Участок / причина</th><th>Простой</th><th>До порога 60 мин</th></tr></thead>
         <tbody>{incidents.map(row => <tr key={row.equipment}><td>{row.date.slice(8)}.10</td><th>{row.equipment}</th><td>{stationName[row.station]}<small>{row.reason}</small></td><td>{row.minutes} мин</td><td><meter min={0} max={60} value={row.minutes} aria-label={`Простой ${row.equipment}`} /><span>{60 - row.minutes} мин</span></td></tr>)}</tbody></table></div>
-      <p className='case-note'>Суммы 65 и 85 минут по дням относятся к разным станкам и не означают превышение лимита одним станком. Начало событий не задано; реальные временные траектории не восстанавливаются.</p>
+      <details className='case-details'><summary>Границы учёта простоев</summary><p>Суммы 65 и 85 минут относятся к разным станкам и не означают превышение одним станком. Начало событий не задано; временные траектории не восстанавливаются.</p></details>
       <details className='case-details'><summary>OEE · цель ≥ 85% · показать оценку и допущения</summary>
         <p>Фактический OEE вычислить нельзя без идеального цикла и планового времени строки. Ниже — иллюстрация при 8 часах на строку и идеальном цикле 240 секунд (120 авто / 8 ч). Это не измеренный OEE и не подтверждение выполнения цели.</p>
         <div className='case-table-wrap'><table className='case-table'><thead><tr><th>Линия / дата</th><th>A · доступность</th><th>P · темп</th><th>Q · годные</th><th>A × P × Q</th></tr></thead><tbody>{rows.map(row => {

@@ -18,9 +18,9 @@ class SceneBoundary extends Component<{ children: ReactNode; fallback: ReactNode
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
-export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTogglePlayback, controlsDisabled }: {
+export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTogglePlayback, controlsDisabled, active = true, stationFocus = 0 }: {
   snapshot: SessionSnapshot; selected: StationId; animate: boolean; stale: boolean; onSelect: (id: StationId) => void;
-  onTogglePlayback: () => void; controlsDisabled: boolean;
+  onTogglePlayback: () => void; controlsDisabled: boolean; active?: boolean; stationFocus?: number;
 }) {
   const [mode, setMode] = useState<'3d' | '2d'>('3d');
   const [quality, setQuality] = useState<'balanced' | 'economy'>(() => window.matchMedia('(max-width: 700px)').matches ? 'economy' : 'balanced');
@@ -43,10 +43,16 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
   const workingCount = vehicles.filter(vehicle => vehicle.state === 'processing').length;
   const waitingCount = vehicles.length - movingCount - workingCount;
 
+  useEffect(() => { if (!active) setWide(false); }, [active]);
+
   useEffect(() => {
     setSelectedVehicleId(null);
     setCameraRequest(previous => ({ view: 'overview', station: previous.station, sequence: previous.sequence + 1 }));
   }, [snapshot.sessionId, snapshot.revision]);
+
+  useEffect(() => {
+    if (stationFocus > 0) setCameraRequest(previous => ({ view: 'station', station: selected, sequence: previous.sequence + 1 }));
+  }, [stationFocus, selected]);
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -64,7 +70,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
     const observer = new IntersectionObserver(entries => setVisible(entries[0]?.isIntersecting ?? true), { rootMargin: '120px' });
     observer.observe(element);
     return () => observer.disconnect();
-  }, [wide, mode]);
+  }, [wide, mode, active]);
   useEffect(() => {
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setWide(false); };
     window.addEventListener('keydown', escape);
@@ -105,7 +111,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
         <button type='button' aria-pressed={mode === '2d'} onClick={() => { setMode('2d'); setWide(false); }}><Map size={16} />2D-схема</button>
       </div>
       {mode === '3d' && <div className='plant-camera' role='group' aria-label='Камера'>
-        <button type='button' disabled={controlsDisabled || snapshot.elapsedSeconds >= snapshot.shiftSeconds} onClick={onTogglePlayback}>{animate ? 'Приостановить смену' : 'Продолжить смену'}</button>
+        {wide && <button type='button' disabled={controlsDisabled || snapshot.elapsedSeconds >= snapshot.shiftSeconds} onClick={onTogglePlayback}>{animate ? 'Приостановить смену' : 'Продолжить смену'}</button>}
         <button type='button' onClick={() => camera('overview')}><RotateCcw size={14} />Общий вид</button>
         <button type='button' onClick={() => camera('top')}>Сверху</button>
         <button type='button' onClick={() => camera('station')}><Focus size={14} />К участку</button>
@@ -116,13 +122,12 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
     {failed && <p className='plant-notice' role='status'>3D недоступно на этом устройстве. Открыта 2D-схема; расчёты и управление доступны.</p>}
     <div className='plant-fleet-stats' aria-label='Машины на конвейере'>
       <strong>В линии <b>{vehicles.length}</b></strong><span>В пути {movingCount}</span><span>На обработке {workingCount}</span><span>Ожидают {waitingCount}</span>
-      <small>Каждая машина учтена · вместимость буферов задана конфигурацией · без обгона</small>
     </div>
     <div ref={viewport} className={mode === '3d' ? 'plant-viewport' : 'plant-flat'} aria-label={mode === '3d' ? 'Интерактивный трёхмерный цех' : 'Двумерная схема'} role='region'>
       {mode === '3d' ? <SceneBoundary onFailure={reportFailure} fallback={flat}>
         <Suspense fallback={<div className='plant-loading' role='status'><Box size={32} /><strong>Собираем трёхмерный цех…</strong><span>Готовим оборудование и камеру</span></div>}>
           <FactoryCanvas snapshot={snapshot} selected={selected} onSelect={choose} layout={layout} quality={quality}
-            animate={animate && !stale} reducedMotion={reducedMotion} renderActive={(wide || visible) && foreground}
+            animate={animate && !stale} reducedMotion={reducedMotion} renderActive={active && (wide || visible) && foreground}
             cameraRequest={cameraRequest} onFailure={reportFailure} selectedVehicleId={selectedVehicleId} onSelectVehicle={chooseVehicle} />
         </Suspense>
       </SceneBoundary> : flat}
@@ -139,7 +144,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
     </div>
     {mode === '3d' && <>
       <div className='plant-bottom'>
-        <p>Вращение — перетаскивание · масштаб — колесо или жест · сдвиг — правая кнопка</p>
+        <p>Вращение — перетаскивание · масштаб — колесо</p>
         <label>Графика <select aria-label='Качество 3D' value={quality} onChange={event => setQuality(event.target.value as 'balanced' | 'economy')}><option value='balanced'>Стандартная</option><option value='economy'>Экономная</option></select></label>
       </div>
       <div className='plant-stations' role='group' aria-label='Выбрать участок в 3D'>
@@ -162,7 +167,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
       </div>
     </details>
     <details className='plant-layout'>
-      <summary>Размещение участков · {layout.title}</summary>
+      <summary>Настроить размещение участков</summary>
       <p>Можно загрузить расположение четырёх участков по шаблону. Файл читается на этом устройстве и меняет только 3D-размещение. Показатели рассчитывает модель; обновление страницы вернёт учебную схему.</p>
       <div className='plant-layout-actions'>
         <button type='button' onClick={download}><Download size={14} />Шаблон схемы</button>

@@ -19,9 +19,8 @@ export function IncidentTimeline({ snapshot }: { snapshot: PlantSnapshot }) {
       <div className='card__head'>
         <div>
           <h2 id='incidents-title' className='card__title'>
-            Хронология инцидентов
+            Инциденты смены
           </h2>
-          <p className='card__sub'>Сначала новые. Время — виртуальное время смены (симуляция).</p>
         </div>
         <span className={`pill ${activeCount > 0 ? 'pill--stale' : 'pill--neutral'}`}>
           Активных: {activeCount}
@@ -29,7 +28,7 @@ export function IncidentTimeline({ snapshot }: { snapshot: PlantSnapshot }) {
       </div>
 
       {sorted.length === 0 ? (
-        <p className='empty'>Инцидентов пока не было. Линия работает штатно.</p>
+        <p className='empty'>Остановок в этой смене пока нет.</p>
       ) : (
         <ol className='timeline'>
           {sorted.map((item) => {
@@ -52,7 +51,7 @@ export function IncidentTimeline({ snapshot }: { snapshot: PlantSnapshot }) {
                     </span>
                   </div>
                   <h3 className='timeline__title'>{item.title}</h3>
-                  <p className='timeline__desc'>{item.description}</p>
+                  <details className='incident-description'><summary>Причина и условия</summary><p className='timeline__desc'>{item.description}</p></details>
                   <p className='timeline__meta'>
                     {resolved
                       ? `Устранён в ${formatClock(item.resolvedAtSeconds ?? 0)} · длительность ${formatDuration(duration)}`

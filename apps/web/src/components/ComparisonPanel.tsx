@@ -223,16 +223,17 @@ export function ComparisonPanel({
         (a, b) => alternativesOrder.indexOf(a.id) - alternativesOrder.indexOf(b.id)
       )
     : [];
+  const best = [...sortedAlternatives].sort((a, b) => b.goodUnits - a.goodUnits || a.downtimeSeconds - b.downtimeSeconds)[0];
 
   return (
     <section id="decisions" className="cmp-panel" aria-labelledby="cmp-heading">
       <div className="cmp-header">
         <div className="cmp-header__titles">
           <h2 id="cmp-heading" className="cmp-heading">
-            Сравнение решений
+            Три варианта одной смены
           </h2>
           <p className="cmp-subheading">
-            Что изменится к концу смены, если обслужить окраску или увеличить мощность сборки?
+            Расчёт не меняет текущую линию.
           </p>
         </div>
       </div>
@@ -342,15 +343,17 @@ export function ComparisonPanel({
           <div className="cmp-empty__icon-wrap">
             <Sliders size={26} aria-hidden="true" />
           </div>
-          <h3 className="cmp-empty__title">Сравнительный анализ не запущен</h3>
+          <h3 className="cmp-empty__title">Оцените действие до его выполнения</h3>
           <p className="cmp-empty__text">
-            Выберите длительность обслуживания и подготовки резерва, затем нажмите «Сравнить решения». Модель построит три варианта до {formatClock(snapshot.shiftSeconds)} модельного времени.
+            Выберите время подготовки и запустите расчёт до {formatClock(snapshot.shiftSeconds, false)}.
           </p>
+          <div className='decision-preview'><article><b>01 · Продолжить</b><span>Текущий сценарий</span></article><article><b>02 · Обслужить окраску</b><span>Пауза на ТО, устранение дальнейших отказов</span></article><article><b>03 · Резерв сборки</b><span>Подготовка, затем удвоенный темп</span></article></div>
         </div>
       )}
 
       {result && (
         <div className="cmp-results">
+          {best && <div className='decision-result' role='status'><span>ИТОГ РАСЧЁТА</span><h3>{best.deltaGoodUnits > 0 ? `${DECISION_HEADERS[best.id]}: +${best.deltaGoodUnits} годных авто` : 'Дополнительные действия не повышают выпуск'}</h3><p>{best.deltaGoodUnits > 0 ? `${best.goodUnits} авто к концу смены при выбранных условиях.` : 'В этих условиях продолжение смены даёт не меньший выпуск.'} Сравнение по выпуску; стоимость ресурсов не учтена.</p></div>}
           <div className="cmp-meta">
             <div className="cmp-meta__item">
               <Clock size={14} aria-hidden="true" />
@@ -398,7 +401,7 @@ export function ComparisonPanel({
                     </div>
                   </div>
 
-                  <p className="cmp-card__desc">{alt.description}</p>
+                  <details className='decision-detail'><summary>По моделям и условиям</summary><p className="cmp-card__desc">{alt.description}</p>
                   {alt.products && <div className='cmp-products'>
                     {alt.products.map(product => <p key={product.id}><span>{PRODUCT_MODELS.find(model => model.id === product.id)?.name}</span><strong>{product.goodUnits} / {product.plannedUnits}</strong></p>)}
                     <small>Годные к заказу модели за выбранную смену</small>
@@ -406,7 +409,7 @@ export function ComparisonPanel({
                   {snapshot.config.productionPlan && <p className='cmp-month-projection'>
                     Повторение такой смены весь месяц: <strong>{formatInt(alt.goodUnits * summarizePlan(snapshot.config.productionPlan).shifts)} авто</strong>.
                     {' '}Грубая экстраполяция, не прогноз; квоты смен и перенос НЗП могут отличаться.
-                  </p>}
+                  </p>}</details>
 
                   <div className="cmp-card__metrics">
                     <div className="cmp-metric">
@@ -452,7 +455,7 @@ export function ComparisonPanel({
 
           <ComparisonChart result={result} />
 
-          <p className="cmp-disclosure__note">Сценарный расчёт по заданному расписанию событий. До пунктирной линии — общая история, после — варианты. Разницы в карточках указаны относительно продолжения смены. Расчёт не изменяет текущую симуляцию.</p>
+          <p className="cmp-disclosure__note">Разница — относительно продолжения смены. Пунктир отмечает начало сравнения.</p>
 
           <details className="cmp-disclosure">
             <summary className="cmp-disclosure__summary">

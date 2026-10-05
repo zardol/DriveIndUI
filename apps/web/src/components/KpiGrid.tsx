@@ -43,13 +43,12 @@ export function KpiGrid({ snapshot }: { snapshot: PlantSnapshot }) {
     <section className='kpi-grid' aria-label='Ключевые показатели смены'>
       <KpiCard
         Icon={Factory}
-        label='Годные автомобили к плану'
+        label='Годный выпуск'
         progress={shiftPlan > 0 ? goodUnits / shiftPlan : 0}
         note={
           latest && delta !== null ? (
             <>
-              По графику к этому моменту: {formatInt(latest.planUnits)} ед. (
-              <strong>{delta === 0 ? 'в графике' : `${formatSigned(delta)} ед.`}</strong>)
+              <strong>{delta === 0 ? 'По графику' : `${formatSigned(delta)} к графику`}</strong> · сейчас нужно {formatInt(latest.planUnits)}
             </>
           ) : (
             'Данные о графике появятся после старта'
@@ -57,7 +56,7 @@ export function KpiGrid({ snapshot }: { snapshot: PlantSnapshot }) {
         }
       >
         {formatInt(goodUnits)}
-        <span className='kpi__unit'> / {formatInt(shiftPlan)} ед. плана смены</span>
+        <span className='kpi__unit'> / {formatInt(shiftPlan)} авто</span>
       </KpiCard>
 
       <KpiCard
@@ -73,17 +72,17 @@ export function KpiGrid({ snapshot }: { snapshot: PlantSnapshot }) {
         Icon={Timer}
         label='Простой оборудования'
         tone={downtimeSeconds > 0 ? 'warn' : 'default'}
-        note='Сумма остановок всех участков. Без ожидания и блокировок.'
+        note='Сумма остановок участков'
       >
         {formatDuration(downtimeSeconds)}
       </KpiCard>
 
       <KpiCard
         Icon={ShieldCheck}
-        label='Качество'
+        label='Доля годных'
         note={
           qualityPercent === null
-            ? 'Пока нет ни одного проверенного автомобиля'
+            ? 'Нет завершённых автомобилей'
             : `Годных: ${formatInt(goodUnits)} · брак: ${formatInt(rejectedUnits)} ед.`
         }
       >

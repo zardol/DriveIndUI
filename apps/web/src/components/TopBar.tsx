@@ -20,8 +20,8 @@ export function TopBar({ connection, sessionId, dataLabel }: TopBarProps) {
   return (
     <header className='topbar'>
       <div className='topbar__brand'>
-        <span className='topbar__name'>DriveIndUI</span>
-        <span className='topbar__sub'>Drive Industrial UI</span>
+        <span className='topbar__name'>Цифровой двойник</span>
+        <span className='topbar__sub'>АЛЛЮР / Октябрь 2026</span>
       </div>
       <div className='topbar__right'>
         <span className='demo-badge'>
@@ -31,11 +31,7 @@ export function TopBar({ connection, sessionId, dataLabel }: TopBarProps) {
         <span className={`conn-chip conn-chip--${connection}`} role='status' aria-live='polite'>
           <Icon size={16} aria-hidden='true' />
           <span>{BROWSER_MODE && connection === 'online' ? 'Локальный режим' : CONNECTION_LABEL[connection]}</span>
-          {sessionId && (
-            <span className='conn-chip__id' title='Идентификатор сессии'>
-              #{sessionId.slice(0, 8)}
-            </span>
-          )}
+          {sessionId && <span className='sr-only'>Сессия {sessionId.slice(0, 8)}</span>}
         </span>
       </div>
     </header>

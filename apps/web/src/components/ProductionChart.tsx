@@ -88,13 +88,12 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
       <div className='card__head'>
         <div>
           <h2 id='production-title' className='card__title'>
-            Расчёт выпуска и план
+            Выпуск за смену
           </h2>
-          <p className='card__sub'>Годные автомобили по времени смены (время симуляции)</p>
         </div>
         {latest && (
           <span className='pill pill--neutral'>
-            Отклонение от плана: {formatSigned(snapshot.goodUnits - latest.planUnits)} ед.
+            {formatSigned(snapshot.goodUnits - latest.planUnits)} к графику
           </span>
         )}
       </div>
