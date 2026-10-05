@@ -24,9 +24,10 @@ interface Props {
   offline: boolean;
   onModeChange: (mode: WorkspaceMode) => void;
   onCommand: (command: ControlCommand) => void;
+  active: boolean;
 }
 
-export function DataWorkspace({ snapshot, mode, pending, offline, onModeChange, onCommand }: Props) {
+export function DataWorkspace({ snapshot, mode, pending, offline, onModeChange, onCommand, active }: Props) {
   const configInput = useRef<HTMLInputElement>(null);
   const historyInput = useRef<HTMLInputElement>(null);
   const generation = useRef(0);
@@ -94,30 +95,23 @@ export function DataWorkspace({ snapshot, mode, pending, offline, onModeChange, 
 
   return <section id='data' className='section card data-workspace' aria-labelledby='data-title'>
     <div className='card__head'>
-      <div><h2 id='data-title' className='card__title'>Данные и режим работы</h2>
-        <p className='card__sub'>Модель рассчитывает движение машин. История показывает измерения из файла.</p></div>
+      <div><h2 id='data-title' className='card__title'>Подключить свои данные</h2></div>
       <span className='pill pill--neutral'>{mode === 'history' ? 'История из CSV' : snapshot.config.source.kind === 'synthetic' ? 'Синтетическая модель' : 'Сценарный расчёт'}</span>
     </div>
     <div className='segmented data-workspace__tabs' role='group' aria-label='Режим данных'>
-      <button type='button' className='segmented__btn' aria-pressed={mode === 'simulation'} disabled={pending} onClick={() => changeMode('simulation')}>Симуляция и 3D</button>
-      <button type='button' className='segmented__btn' aria-pressed={mode === 'history'} disabled={pending} onClick={() => changeMode('history')}>История производства</button>
+      <button type='button' className='segmented__btn' aria-pressed={mode === 'simulation'} disabled={pending} onClick={() => changeMode('simulation')}>Параметры модели</button>
+      <button type='button' className='segmented__btn' aria-pressed={mode === 'history'} disabled={pending} onClick={() => changeMode('history')}>История CSV</button>
     </div>
 
     {mode === 'simulation' ? <>
-      <p className='data-workspace__source'><strong>{snapshot.config.name}</strong> · {snapshot.config.source.label}<br />
-        Выпуск, очереди и прогноз рассчитываются моделью. Параметры из файла требуют калибровки по данным завода.</p>
-      <details open={open} onToggle={event => setOpen(event.currentTarget.open)} className='data-workspace__details'>
-        <summary>Параметры производства и импорт JSON</summary>
-        <ConfigSummary config={snapshot.config} title='Активная конфигурация' />
+      <p className='data-workspace__source'><strong>{snapshot.config.name}</strong></p>
         <div className='data-workspace__actions'>
-          <button type='button' className='btn' disabled={reading} onClick={() => configInput.current?.click()}>Загрузить конфигурацию</button>
+          <button type='button' className='btn btn--primary' disabled={reading} onClick={() => configInput.current?.click()}>Загрузить JSON</button>
           <button type='button' className='btn' onClick={() => downloadText('production-example.json', JSON.stringify(DEFAULT_PRODUCTION_CONFIG, null, 2), 'application/json')}>Шаблон JSON</button>
           <button type='button' className='btn' onClick={() => downloadText('production-config.json', JSON.stringify(snapshot.config, null, 2), 'application/json')}>Скачать текущую</button>
-          <button type='button' className='btn' disabled={disabled} onClick={() => { setCandidate(structuredClone(DEFAULT_PRODUCTION_CONFIG)); setIssues([]); setWarnings([]); setMessage('Учебные параметры готовы к применению.'); }}>Учебные параметры</button>
         </div>
         <input ref={configInput} type='file' accept='.json,application/json' className='sr-only' tabIndex={-1} aria-label='Файл конфигурации JSON'
           onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void readFile(file, 'simulation'); }} />
-        <p className='data-workspace__hint'>Все интервалы — в секундах; скорость ленты — в условных единицах модели в секунду. Геометрия и порядок четырёх участков пока фиксированы.</p>
         {candidate && <div className='data-workspace__preview'>
           <ConfigSummary config={candidate} title='Будет применено' />
           <p>Применение обнулит текущую смену и поставит новую на паузу. Сценарий и скорость времени сохранятся.</p>
@@ -130,6 +124,11 @@ export function DataWorkspace({ snapshot, mode, pending, offline, onModeChange, 
             <button type='button' className='btn' disabled={pending} onClick={() => { setCandidate(null); setMessage(''); }}>Отменить загрузку</button>
           </div>
         </div>}
+      <details open={open} onToggle={event => setOpen(event.currentTarget.open)} className='data-workspace__details'>
+        <summary>Параметры активной модели</summary>
+        <ConfigSummary config={snapshot.config} title='Сейчас применяется' />
+        <p className='data-workspace__hint'>Время — секунды; скорость — условные единицы в секунду. Четыре участка, фиксированный порядок операций.</p>
+        <button type='button' className='btn' disabled={disabled} onClick={() => { setCandidate(structuredClone(DEFAULT_PRODUCTION_CONFIG)); setIssues([]); setWarnings([]); setMessage('Учебные параметры готовы к применению.'); }}>Открыть учебную конфигурацию</button>
       </details>
     </> : <>
       <div className='data-workspace__actions'>
@@ -143,7 +142,7 @@ export function DataWorkspace({ snapshot, mode, pending, offline, onModeChange, 
       </div>
       <input ref={historyInput} type='file' accept='.csv,text/csv' className='sr-only' tabIndex={-1} aria-label='Файл истории CSV'
         onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void readFile(file, 'history'); }} />
-      <p className='data-workspace__hint'>CSV UTF-8 до 2 МиБ и 10 000 записей за смену. Время — секунды от начала смены; выпуск, брак, план и простой — нарастающим итогом; НЗП — на момент записи. История остаётся на этом устройстве и исчезает при обновлении страницы.</p>
+      <details className='data-workspace__details'><summary>Формат CSV и хранение</summary><p className='data-workspace__hint'>UTF-8, до 2 МиБ и 10 000 записей. Время — секунды от начала смены; выпуск, брак, план и простой — нарастающим итогом; НЗП — на момент записи. Файл остаётся на устройстве и исчезает при обновлении страницы.</p></details>
     </>}
 
     {reading && <p role='status'>Проверяем файл…</p>}
@@ -154,8 +153,8 @@ export function DataWorkspace({ snapshot, mode, pending, offline, onModeChange, 
     </div>}
     {warnings.length > 0 && <ul className='data-workspace__hint'>{warnings.map((warning, index) => <li key={index}>{warning}</li>)}</ul>}
     {mode === 'history' && (dataset
-      ? <Suspense fallback={<p role='status'>Загружаем просмотр истории…</p>}><HistoricalViewer key={datasetVersion} dataset={dataset} /></Suspense>
-      : <p className='empty'>Загрузите временной ряд CSV или откройте учебный пример. Таблицы кейса за 1–2 октября доступны выше в «Исходных показателях»; они не преобразуются в вымышленную посекундную историю.</p>)}
+      ? <Suspense fallback={<p role='status'>Загружаем просмотр истории…</p>}><HistoricalViewer key={datasetVersion} dataset={dataset} active={active} /></Suspense>
+      : <p className='empty'>Загрузите CSV или откройте учебный пример для просмотра истории.</p>)}
   </section>;
 }
 

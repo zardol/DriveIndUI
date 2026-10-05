@@ -175,7 +175,7 @@ function HistoryTooltip({ active, payload }: HistoryTooltipProps) {
   );
 }
 
-export const HistoricalViewer = memo(function HistoricalViewer({ dataset }: { dataset: HistoricalDataset }) {
+export const HistoricalViewer = memo(function HistoricalViewer({ dataset, active = true }: { dataset: HistoricalDataset; active?: boolean }) {
   const [state, dispatch] = useReducer(reducer, dataset, createInitialState);
   const sliderId = useId();
   const summaryId = useId();
@@ -191,7 +191,7 @@ export const HistoricalViewer = memo(function HistoricalViewer({ dataset }: { da
   const records = dataset.records;
   const last = Math.max(0, records.length - 1);
   const index = clamp(view.index, 0, last);
-  const playing = view.playing && index < last;
+  const playing = active && view.playing && index < last;
 
   /* Автовоспроизведение: одна запись за тик; интервал снимается при размонтировании и замене данных. */
   useEffect(() => {
