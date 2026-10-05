@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { BrowserSession } from './browserSession';
 import { createEngine, advanceEngine, getSnapshot } from '@driveindui/simulation';
-import { DEFAULT_PRODUCTION_CONFIG } from '@driveindui/shared';
+import { DEFAULT_PRODUCTION_CONFIG, createCaseConfig } from '@driveindui/shared';
 
 describe('BrowserSession', () => {
   it('applies an isolated configuration on pause and retains it across resets, scenarios and forks', () => {
@@ -48,7 +48,7 @@ describe('BrowserSession', () => {
     let now = 0;
     const session = new BrowserSession({ now: () => now, id: 'equivalence' });
     session.control({ action: 'setScenario', scenario });
-    const engine = createEngine({ seed: 42, scenario });
+    const engine = createEngine({ seed: 42, scenario, config: createCaseConfig() });
     for (let step = 0; step < 96; step++) {
       now += 5000;
       advanceEngine(engine, 300);
@@ -63,7 +63,7 @@ describe('BrowserSession', () => {
     currentTime = 1000;
     const snap = session.snapshot();
 
-    const expectedEngine = createEngine({ seed: 42, scenario: 'normal' });
+    const expectedEngine = createEngine({ seed: 42, scenario: 'normal', config: createCaseConfig() });
     advanceEngine(expectedEngine, 60);
     const expectedSnap = getSnapshot(expectedEngine);
 

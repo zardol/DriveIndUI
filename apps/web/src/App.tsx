@@ -17,6 +17,7 @@ import { BROWSER_MODE } from './runtimeMode';
 import './stage2-layout.css';
 import { ComparisonSection } from './components/ComparisonSection';
 import { DataWorkspace, type WorkspaceMode } from './components/DataWorkspace';
+import { CasePanel } from './components/CasePanel';
 
 const ProductionChart = lazy(() => import('./components/ProductionChart').then((module) => ({ default: module.ProductionChart })));
 
@@ -66,6 +67,7 @@ export default function App() {
                 {mode === 'simulation' && <ClockCard snapshot={snapshot} stale={stale} />}
               </section>
 
+              <CasePanel snapshot={snapshot} disabled={session.pending || stale} onCommand={session.sendCommand} />
               <DataWorkspace snapshot={snapshot} mode={mode} pending={session.pending} offline={stale} onCommand={session.sendCommand}
                 onModeChange={next => { if (next === 'history' && snapshot.running) session.sendCommand({ action: 'pause' }); setMode(next); }} />
 

@@ -11,6 +11,7 @@ import { ConveyorBelt } from './ConveyorBelt';
 import { ConveyorFleet } from './ConveyorFleet';
 import { ConveyorMotion } from './conveyorMotion';
 import { STATUS_META } from '../status';
+import { FactoryScenery } from './FactoryScenery';
 
 export type CameraView = 'overview' | 'top' | 'station' | 'vehicle';
 export interface CameraRequest { view: CameraView; sequence: number; station: StationId; vehicleId?: string }
@@ -40,7 +41,7 @@ function CameraRig({ request, layout, route, motion }: { request: CameraRequest;
     const orbit = controls.current;
     if (!orbit) return;
     const target = new Vector3(0, 0, 0);
-    const offset = new Vector3(0.5, 1.2, 1.1).normalize();
+    const offset = new Vector3(0.35, 1.05, 1.25).normalize();
     const aspect = size.width / Math.max(1, size.height);
     const { width, depth } = layout.floor;
     // Fit all corners in camera space, including perspective depth near the camera.
@@ -118,7 +119,7 @@ function Station({ placement, station, selected, animate, reducedMotion, onSelec
   const color = COLORS[station.status];
   return <group position={[placement.position[0], 0, placement.position[1]]}>
     <group rotation={[0, placement.rotation * Math.PI / 180, 0]} onClick={event => { event.stopPropagation(); onSelect(station.id); }}>
-      <mesh position={[0, -0.02, 0]} receiveShadow><boxGeometry args={[7.8, 0.14, 5.8]} /><meshStandardMaterial color={selected ? '#cce3db' : '#e7e9df'} roughness={0.9} /></mesh>
+      <mesh position={[0, -0.02, 0]} receiveShadow><boxGeometry args={[7.8, 0.14, 5.8]} /><meshStandardMaterial color={selected ? '#9fcbc0' : '#c4d7d4'} roughness={0.85} /></mesh>
       <mesh position={[0, 0.08, 2.8]}><boxGeometry args={[7.7, 0.09, 0.13]} /><meshStandardMaterial color={selected ? '#186e61' : color} /></mesh>
       <EquipmentModel station={station} animate={stationCanAnimate(station, animate, reducedMotion)} selected={selected} />
 
@@ -192,8 +193,8 @@ export default function FactoryCanvas(props: FactoryCanvasProps) {
   return <><Canvas shadows={quality === 'balanced' ? 'percentage' : false} dpr={quality === 'balanced' ? [1, 1.5] : 1}
     frameloop={!renderActive ? 'never' : animate && !reducedMotion ? 'always' : 'demand'} camera={{ position: [35, 35, 45], fov: 42, near: 0.1, far: 600 }}
     gl={{ antialias: true, powerPreference: 'default' }} fallback={<span>Для 3D требуется поддержка WebGL. Доступна 2D-схема.</span>}>
-    <color attach='background' args={['#e8ede6']} />
-    <ambientLight intensity={0.8} />
+    <color attach='background' args={['#d8e3e2']} />
+    <ambientLight intensity={0.65} />
     <hemisphereLight args={['#ffffff', '#698879', 1.5]} />
     <directionalLight position={[5, 60, 24]} intensity={2.2} castShadow={quality === 'balanced'} shadow-mapSize={[2048, 2048]}
       shadow-camera-left={-70} shadow-camera-right={70} shadow-camera-top={70} shadow-camera-bottom={-70} shadow-camera-far={180} shadow-normalBias={0.06} />
@@ -203,6 +204,7 @@ export default function FactoryCanvas(props: FactoryCanvasProps) {
     <LabelProjection anchors={anchors} labels={labels} />
     <CameraRig request={cameraRequest} layout={layout} route={route} motion={motion} />
     <FactoryFloor layout={layout} />
+    <FactoryScenery layout={layout} />
     <ConveyorBelt route={route} vehicles={snapshot.conveyor.vehicles} animate={animate && !reducedMotion} speed={snapshot.speed * snapshot.conveyor.nominalSpeed / 0.5} />
     <ConveyorFleet route={route} vehicles={snapshot.conveyor.vehicles} motion={motion} selectedId={selectedVehicleId} onSelect={onSelectVehicle} />
     <Terminals layout={layout} />
@@ -211,15 +213,15 @@ export default function FactoryCanvas(props: FactoryCanvasProps) {
       return station && <Station key={placement.id} placement={placement} station={station} selected={selected === station.id}
         onSelect={onSelect} animate={animate} reducedMotion={reducedMotion} />;
     })}
-  </Canvas><div className='plant-label-layer'>
+  </Canvas><div className='plant-label-layer' data-render-active={renderActive} data-animate={animate}>
     {anchors.map(anchor => {
       const station = snapshot.stations.find(item => item.id === anchor.id);
       return <div className='plant-label-anchor' key={anchor.id} ref={element => { if (element) labels.current.set(anchor.id, element); else labels.current.delete(anchor.id); }}>
         {station ? <button className={`plant-label${selected === station.id ? ' is-selected' : ''}`} type='button' onClick={() => onSelect(station.id)} aria-pressed={selected === station.id}>
           <span><i style={{ background: COLORS[station.status] }} />{station.name}</span>
           <small>{STATUS_META[station.status].short} · буфер {station.inputQueue}/{station.bufferCapacity}</small>
-          <small>Ожидают {station.queuedUnits} · подъезжают {station.arrivingUnits}</small>
-        </button> : <div className='plant-terminal'>{anchor.id === 'supply' ? 'Подача кузовов' : 'Выход из линии'}<small>{anchor.id === 'supply' ? `Подано: ${snapshot.introducedUnits}` : `${snapshot.goodUnits} годных · ${snapshot.rejectedUnits} брак`}</small></div>}
+          <small>{station.id === 'welding' ? 'ABB-01 / ABB-04' : station.id === 'painting' ? 'Камера-02' : station.id === 'assembly' ? 'Конвейер-03' : 'ОТК · условный пост'}</small>
+        </button> : <div className='plant-terminal'>{anchor.id === 'supply' ? 'Склад комплектующих' : 'Склад готовой продукции'}<small>{anchor.id === 'supply' ? `Подано: ${snapshot.introducedUnits}` : `${snapshot.goodUnits} годных · ${snapshot.rejectedUnits} брак`}</small></div>}
       </div>;
     })}
   </div></>;

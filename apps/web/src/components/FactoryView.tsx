@@ -1,6 +1,6 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Box, Map, Maximize2, RotateCcw, Upload, Download, Focus } from 'lucide-react';
-import { STATIONS, type ConveyorVehicleSnapshot, type SessionSnapshot, type StationId } from '@driveindui/shared';
+import { STATIONS, PRODUCT_MODELS, type ConveyorVehicleSnapshot, type SessionSnapshot, type StationId } from '@driveindui/shared';
 import { FlowDiagram } from './FlowDiagram';
 import { buildConveyorRoute } from '../three/conveyorPath';
 import { DEFAULT_LAYOUT, parseFactoryLayout, type FactoryLayout } from '../three/factoryLayout';
@@ -53,8 +53,10 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
     const change = () => setReducedMotion(media.matches);
     change(); media.addEventListener('change', change);
     const foregroundChange = () => setForeground(!document.hidden);
+    foregroundChange();
     document.addEventListener('visibilitychange', foregroundChange);
-    return () => { media.removeEventListener('change', change); document.removeEventListener('visibilitychange', foregroundChange); };
+    window.addEventListener('focus', foregroundChange);
+    return () => { media.removeEventListener('change', change); document.removeEventListener('visibilitychange', foregroundChange); window.removeEventListener('focus', foregroundChange); };
   }, []);
   useEffect(() => {
     const element = viewport.current;
@@ -62,7 +64,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
     const observer = new IntersectionObserver(entries => setVisible(entries[0]?.isIntersecting ?? true), { rootMargin: '120px' });
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [wide, mode]);
   useEffect(() => {
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setWide(false); };
     window.addEventListener('keydown', escape);
@@ -120,15 +122,19 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
       {mode === '3d' ? <SceneBoundary onFailure={reportFailure} fallback={flat}>
         <Suspense fallback={<div className='plant-loading' role='status'><Box size={32} /><strong>Собираем трёхмерный цех…</strong><span>Готовим оборудование и камеру</span></div>}>
           <FactoryCanvas snapshot={snapshot} selected={selected} onSelect={choose} layout={layout} quality={quality}
-            animate={animate && !stale} reducedMotion={reducedMotion} renderActive={visible && foreground}
+            animate={animate && !stale} reducedMotion={reducedMotion} renderActive={(wide || visible) && foreground}
             cameraRequest={cameraRequest} onFailure={reportFailure} selectedVehicleId={selectedVehicleId} onSelectVehicle={chooseVehicle} />
         </Suspense>
       </SceneBoundary> : flat}
       {mode === '3d' && <div className='plant-overlay' aria-hidden='true'><span>ЦЕХ / {snapshot.scenario === 'normal' ? 'ШТАТНЫЙ РЕЖИМ' : 'СЦЕНАРИЙ'}</span><strong>{stale ? 'Нет связи' : snapshot.elapsedSeconds >= snapshot.shiftSeconds ? 'Смена завершена' : animate ? 'Смена идёт' : 'Смена на паузе'}</strong><small>{layout.units === 'meters' ? 'Размеры из загруженной схемы' : 'Условные размеры'}</small></div>}
       {mode === '3d' && selectedVehicleId && <div className='plant-vehicle-card' role='status'>
         <strong>{selectedVehicleId}</strong>
+        {selectedVehicle?.modelId && <b>{PRODUCT_MODELS.find(model => model.id === selectedVehicle.modelId)?.name}</b>}
         <span>{selectedVehicle ? `${stageName(selectedVehicle)} · ${VEHICLE_STATE[selectedVehicle.state]}` : 'Автомобиль покинул линию'}</span>
         {selectedVehicle?.outcome === 'rejected' && <small>Отмечен брак · следует к выходу</small>}
+      </div>}
+      {mode === '3d' && snapshot.config.productionPlan && <div className='plant-model-key' aria-label='Цвета моделей после окраски'>
+        {PRODUCT_MODELS.map(model => <span key={model.id}><i style={{ background: model.color }} />{model.name}</span>)}
       </div>}
     </div>
     {mode === '3d' && <>
@@ -150,7 +156,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
       <div className='plant-vehicle-list'>
         {vehicles.map(vehicle => <button key={vehicle.id} type='button' aria-pressed={selectedVehicleId === vehicle.id}
           data-vehicle-id={vehicle.id} data-distance={vehicle.distance} data-state={vehicle.state} disabled={mode !== '3d'} onClick={() => chooseVehicle(vehicle.id)}>
-          <strong>{vehicle.id}</strong><span>{stageName(vehicle)}</span><small>{VEHICLE_STATE[vehicle.state]}</small>
+          <strong>{vehicle.id}</strong><span>{PRODUCT_MODELS.find(model => model.id === vehicle.modelId)?.name ?? stageName(vehicle)}</span><small>{stageName(vehicle)} · {VEHICLE_STATE[vehicle.state]}</small>
         </button>)}
         {vehicles.length === 0 && <p>На конвейере нет автомобилей.</p>}
       </div>

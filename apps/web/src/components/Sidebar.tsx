@@ -11,9 +11,9 @@ interface SectionLink {
 
 const SECTIONS: readonly SectionLink[] = [
   { id: 'overview', label: 'Обзор', title: 'Обзор и управление', Icon: LayoutDashboard },
+  { id: 'case-plan', label: 'План', title: 'Месячный план и данные кейса', Icon: Activity },
   { id: 'data', label: 'Данные', title: 'Данные и режим работы', Icon: Database },
   { id: 'flow', label: 'Линия', title: 'Схема линии', Icon: Workflow },
-  { id: 'production', label: 'План', title: 'Расчёт выпуска и план', Icon: Activity },
   { id: 'incidents', label: 'События', title: 'Хронология инцидентов', Icon: Bell },
   { id: 'decisions', label: 'Решения', title: 'Сравнение решений', Icon: GitCompareArrows },
   { id: 'legend', label: 'Легенда', title: 'Легенда и пояснения', Icon: Info },

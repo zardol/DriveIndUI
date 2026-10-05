@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { createCaseConfig } from '@driveindui/shared';
 import { createEngine, advanceEngine, getSnapshot, compareEngine, type Engine } from '@driveindui/simulation';
 import type { ComparisonOptions, SessionComparison, ControlCommand, ScenarioId, SessionSnapshot, Speed } from '@driveindui/shared';
 
@@ -30,7 +31,7 @@ export class SessionStore {
     }
     const now = this.now();
     const session: Session = {
-      id: randomUUID(), engine: createEngine({ seed: 42, scenario: 'normal' }), scenario: 'normal',
+      id: randomUUID(), engine: createEngine({ seed: 42, scenario: 'normal', config: createCaseConfig() }), scenario: 'normal',
       revision: 0, running: true, speed: 60, lastTick: now, lastAccess: now, remainder: 0,
     };
     this.sessions.set(session.id, session);

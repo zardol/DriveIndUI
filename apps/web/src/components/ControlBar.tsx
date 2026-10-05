@@ -15,7 +15,12 @@ interface ControlBarProps {
 
 export function ControlBar({ snapshot, pending, offline, error, onCommand, onDismissError }: ControlBarProps) {
   const disabled = pending || offline;
-  const scenario = SCENARIOS.find((item) => item.id === snapshot.scenario);
+  const scenarios = snapshot.config.productionPlan ? [
+    { id: 'normal', name: 'Без остановок · базовый расчёт', description: 'Оценка мощности и выполнения заказов по параметрам кейса, без дополнительных остановок.' },
+    { id: 'equipment', name: 'Камера-02 · фильтр · 40 мин', description: 'Длительность из кейса. Остановка окраски начинается на 20-й минуте условного сценария.' },
+    { id: 'bottleneck', name: 'Конвейер-03 · цепь · 55 мин', description: 'Длительность из кейса. Остановка сборки начинается на 20-й минуте условного сценария.' },
+  ] : SCENARIOS;
+  const scenario = scenarios.find((item) => item.id === snapshot.scenario);
 
   return (
     <section className='card controls' aria-label='Управление симуляцией' aria-busy={pending}>
@@ -31,7 +36,7 @@ export function ControlBar({ snapshot, pending, offline, error, onCommand, onDis
             disabled={disabled}
             onChange={(event) => onCommand({ action: 'setScenario', scenario: event.target.value as ScenarioId })}
           >
-            {SCENARIOS.map((item) => (
+            {scenarios.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
               </option>

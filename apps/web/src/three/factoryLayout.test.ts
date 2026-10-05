@@ -66,10 +66,10 @@ describe('factoryLayout', () => {
       const rotated = structuredClone(DEFAULT_LAYOUT);
       rotated.stations[0].rotation = 90;
       rotated.stations[1].rotation = 90;
-      rotated.stations[1].position = [37, -33];
+      rotated.stations[1].position = [20, -15];
       expect(() => parseFactoryLayout(rotated)).toThrow(/близко/i);
       const terminal = structuredClone(DEFAULT_LAYOUT);
-      terminal.terminals.supply = [33, -28];
+      terminal.terminals.supply = [17, -10];
       expect(() => parseFactoryLayout(terminal)).toThrow(/близко/i);
     });
 
@@ -90,7 +90,7 @@ describe('factoryLayout', () => {
       expect(() => parseFactoryLayout(input)).toThrow(/свойства/i);
       const valid = parseFactoryLayout(DEFAULT_LAYOUT);
       valid.terminals.supply[0] = 100;
-      expect(DEFAULT_LAYOUT.terminals.supply[0]).toBe(-44);
+      expect(DEFAULT_LAYOUT.terminals.supply[0]).toBe(-22);
     });
   });
 

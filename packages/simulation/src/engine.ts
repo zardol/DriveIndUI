@@ -13,7 +13,7 @@ import type {
   ConveyorSnapshot,
   ProductionConfig
 } from '@driveindui/shared';
-import { DEFAULT_PRODUCTION_CONFIG, parseProductionConfig } from '@driveindui/shared';
+import { DEFAULT_PRODUCTION_CONFIG, parseProductionConfig, summarizePlan, type ProductModelId, type ProductProgress } from '@driveindui/shared';
 import { createRng, nextRandom } from './prng';
 import type { RngState } from './prng';
 
@@ -110,6 +110,7 @@ export interface EngineStationState {
 }
 
 export interface EngineVehicle {
+  modelId?: ProductModelId;
   id: string;
   serial: number;
   distance: number;
@@ -119,6 +120,7 @@ export interface EngineVehicle {
 }
 
 export interface Engine {
+  readonly products: ProductProgress[];
   readonly scenario: ScenarioId;
   readonly seed: number;
   readonly config: ProductionConfig;
@@ -178,6 +180,9 @@ export function createEngine(options: EngineOptions = {}): Engine {
   });
 
   const engine: Engine = {
+    products: config.productionPlan ? summarizePlan(config.productionPlan).models.map(model => ({
+      id: model.id, plannedUnits: model.shiftUnits, introducedUnits: 0, goodUnits: 0, rejectedUnits: 0, wip: 0,
+    })) : [],
     scenario,
     seed,
     config,
@@ -187,7 +192,7 @@ export function createEngine(options: EngineOptions = {}): Engine {
     rejectedUnits: 0,
     rng: createRng(seed),
     stations,
-    events: SCENARIO_EVENTS[scenario],
+    events: config.productionPlan ? caseEvents(scenario) : SCENARIO_EVENTS[scenario],
     incidents: [],
     incidentIndexByEvent: new Map<string, number>(),
     history: [],
@@ -195,10 +200,12 @@ export function createEngine(options: EngineOptions = {}): Engine {
   };
 
   const first = stations[0];
-  if (first) {
+  const initialModel = nextProduct(engine);
+  if (first && (!config.productionPlan || initialModel)) {
     first.queue = INITIAL_QUEUED_UNITS;
     engine.introducedUnits = INITIAL_QUEUED_UNITS;
     engine.vehicles.push({
+      ...(initialModel ? { modelId: initialModel.id } : {}),
       id: `DI-0001`,
       serial: 1,
       distance: 0,
@@ -206,6 +213,7 @@ export function createEngine(options: EngineOptions = {}): Engine {
       actualLastSpeed: 0,
       outcome: 'pending',
     });
+    if (initialModel) initialModel.introducedUnits += 1;
   }
 
   applyConditions(engine);
@@ -279,6 +287,7 @@ export function getSnapshot(engine: Engine): PlantSnapshot {
         stage = STATIONS[v.stageIndex].id;
       }
       return {
+        ...(v.modelId ? { modelId: v.modelId } : {}),
         id: v.id,
         serial: v.serial,
         distance: v.distance,
@@ -292,6 +301,9 @@ export function getSnapshot(engine: Engine): PlantSnapshot {
   };
 
   return {
+    ...(engine.config.productionPlan ? { products: engine.products.map(product => ({
+      ...product, wip: engine.vehicles.filter(vehicle => vehicle.modelId === product.id).length,
+    })) } : {}),
     scenario: engine.scenario,
     config: structuredClone(engine.config),
     elapsedSeconds: elapsed,
@@ -408,10 +420,13 @@ function tick(engine: Engine): void {
   while (engine.vehicles.length > 0) {
     const v = engine.vehicles[0];
     if (v.distance === CONVEYOR_LENGTH) {
+      const product = engine.products.find(item => item.id === v.modelId);
       if (v.outcome === 'good') {
         engine.goodUnits += 1;
+        if (product) product.goodUnits += 1;
       } else if (v.outcome === 'rejected') {
         engine.rejectedUnits += 1;
+        if (product) product.rejectedUnits += 1;
       }
       engine.vehicles.shift();
     } else {
@@ -421,14 +436,16 @@ function tick(engine: Engine): void {
 
   const nextElapsed = engine.elapsedSeconds + 1;
   if (nextElapsed % engine.config.supplyIntervalSeconds === 0) {
+    const model = nextProduct(engine);
     const firstSt = engine.stations[0];
     const assignedToFirst = engine.vehicles.filter(x => x.stageIndex === 0 && x.id !== firstSt.activeVehicleId).length;
     if (assignedToFirst < firstSt.def.bufferCapacity) {
       const clearance = engine.vehicles.length === 0 ? Infinity : engine.vehicles[engine.vehicles.length - 1].distance;
-      if (clearance >= MIN_SPACING) {
+      if (clearance >= MIN_SPACING && (!engine.config.productionPlan || model)) {
         engine.introducedUnits += 1;
         const serial = engine.introducedUnits;
         engine.vehicles.push({
+          ...(model ? { modelId: model.id } : {}),
           id: `DI-${String(serial).padStart(4, '0')}`,
           serial,
           distance: 0,
@@ -436,6 +453,7 @@ function tick(engine: Engine): void {
           actualLastSpeed: 0,
           outcome: 'pending',
         });
+        if (model) model.introducedUnits += 1;
       }
     }
   }
@@ -449,6 +467,24 @@ function tick(engine: Engine): void {
   engine.elapsedSeconds = nextElapsed;
   applyConditions(engine);
   recordHistory(engine);
+}
+
+/** Reserve an order for every car in the line. Rejected exits free demand for a replacement. */
+function nextProduct(engine: Engine): ProductProgress | undefined {
+  return engine.products.map(product => ({ product, reserved: product.goodUnits + engine.vehicles.filter(vehicle => vehicle.modelId === product.id).length }))
+    .filter(({ product, reserved }) => reserved < product.plannedUnits)
+    .sort((a, b) => a.reserved / a.product.plannedUnits - b.reserved / b.product.plannedUnits)[0]?.product;
+}
+
+function caseEvents(scenario: ScenarioId): readonly ScenarioEvent[] {
+  if (scenario === 'normal') return [];
+  const painting = scenario === 'equipment';
+  return [{
+    id: painting ? 'case-paint-filter' : 'case-assembly-chain', stationId: painting ? 'painting' : 'assembly',
+    kind: 'stop', cycleFactor: 1, fromSeconds: 1200, toSeconds: 1200 + (painting ? 40 : 55) * 60,
+    severity: 'critical', title: painting ? 'Камера-02 · замена фильтра' : 'Конвейер-03 · обрыв цепи',
+    description: `Длительность ${painting ? 40 : 55} мин взята из тестового кейса. Начало на 20-й минуте задано для сценария; в исходнике время не указано.`,
+  }];
 }
 
 export function applyConditions(engine: Engine): void {
@@ -534,7 +570,8 @@ function forecastUnits(engine: Engine, wip: number): number {
   const projected = (good / elapsed) * engine.config.shiftSeconds;
 
   const bottleneckCycle = engine.config.stations.reduce((max, s) => Math.max(max, s.cycleSeconds), 1);
-  const ceiling = good + wip + Math.floor(remaining / bottleneckCycle);
+  const capacityCeiling = good + wip + Math.floor(remaining / bottleneckCycle);
+  const ceiling = engine.config.productionPlan ? Math.min(capacityCeiling, engine.products.reduce((sum, product) => sum + product.plannedUnits, 0)) : capacityCeiling;
 
   return Math.round(clamp(projected, good, ceiling));
 }

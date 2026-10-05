@@ -1,6 +1,7 @@
 import { createEngine, advanceEngine, getSnapshot, cloneEngine } from '@driveindui/simulation';
 import type { Engine } from '@driveindui/simulation';
 import type { ControlCommand, ScenarioId, SessionSnapshot, Speed } from '@driveindui/shared';
+import { createCaseConfig } from '@driveindui/shared';
 
 export interface BrowserSessionOptions {
   now?: () => number;
@@ -24,7 +25,7 @@ export class BrowserSession {
       : `local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`);
     this.now = options?.now ?? (() => performance.now());
     this.scenario = 'normal';
-    this.engine = createEngine({ seed: 42, scenario: this.scenario });
+    this.engine = createEngine({ seed: 42, scenario: this.scenario, config: createCaseConfig() });
     this.running = true;
     this.speed = 60;
     this.lastTick = this.now();

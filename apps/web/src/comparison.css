@@ -592,3 +592,6 @@
   .cmp-spin { animation: none; }
   .cmp-select, .cmp-btn, .cmp-disclosure__chevron { transition: none; }
 }
+.cmp-products { margin: 10px 0; padding: 12px; background: #eef3e8; border-radius: 8px; }
+.cmp-products p { display: flex; justify-content: space-between; gap: 8px; margin: 5px 0; font-size: 11px; }
+.cmp-products small, .cmp-month-projection { font-size: 10px; line-height: 1.6; color: #687568; }

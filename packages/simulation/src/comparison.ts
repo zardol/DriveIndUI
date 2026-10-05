@@ -28,9 +28,11 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
     const downtime = eng.stations.reduce((sum, s) => sum + s.downtimeSeconds, 0);
     const baseDowntime = baseEng ? baseEng.stations.reduce((sum, s) => sum + s.downtimeSeconds, 0) : downtime;
     const baseUnits = baseEng ? baseEng.goodUnits : eng.goodUnits;
-    const wip = getSnapshot(eng).wip;
+    const snapshot = getSnapshot(eng);
+    const wip = snapshot.wip;
 
     return {
+      ...(snapshot.products ? { products: snapshot.products } : {}),
       id,
       title,
       description,
@@ -131,6 +133,7 @@ export function compareEngine(source: Engine, options: ComparisonOptions): Compa
   ));
 
   const assumptions = [
+    ...(source.config.productionPlan ? ['Месячные заказы распределены по моделям и сменам. Нераспределённая часть цели не запускается; пустой вход после выполнения заказов не является отказом оборудования.', 'Циклы трёх линий оценены по агрегатам; цикл ОТК, транспорт и буферы условные. Финальный брак временно принят по сборке, поскольку данных после ОТК нет.'] : []),
     'Расписание событий сценария известно точно (без прогнозирования).',
     `Вероятность брака каждого изделия — ${Number((source.config.rejectRate * 100).toFixed(4))}%. Последовательность случайных исходов одинакова во всех ветвях; фактическая доля зависит от числа завершённых изделий.`,
     `Буферы ограничены. Кузов предлагается каждые ${source.config.supplyIntervalSeconds} секунд; при полном входном буфере поступление пропускается.`,

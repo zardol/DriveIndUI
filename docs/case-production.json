@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "name": "АЛЛЮР · тестовый кейс · октябрь 2026",
+  "source": {
+    "kind": "provided",
+    "label": "Тестовые данные организатора · 1–2 октября 2026"
+  },
+  "shiftSeconds": 28800,
+  "shiftPlan": 122,
+  "supplyIntervalSeconds": 236,
+  "rejectRate": 0.0125,
+  "conveyorSpeed": 0.5,
+  "stations": [
+    {
+      "id": "welding",
+      "cycleSeconds": 236,
+      "bufferCapacity": 8
+    },
+    {
+      "id": "painting",
+      "cycleSeconds": 237,
+      "bufferCapacity": 8
+    },
+    {
+      "id": "assembly",
+      "cycleSeconds": 239,
+      "bufferCapacity": 8
+    },
+    {
+      "id": "quality",
+      "cycleSeconds": 180,
+      "bufferCapacity": 8
+    }
+  ],
+  "productionPlan": {
+    "month": "2026-10",
+    "workingDays": 22,
+    "shiftsPerDay": 2,
+    "monthlyTarget": 5500,
+    "shiftIndex": 0,
+    "models": [
+      {
+        "id": "onix",
+        "monthlyUnits": 2500
+      },
+      {
+        "id": "cobalt",
+        "monthlyUnits": 1800
+      },
+      {
+        "id": "j7",
+        "monthlyUnits": 500
+      }
+    ]
+  }
+}
