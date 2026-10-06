@@ -2,6 +2,7 @@ import type { ProductionConfig, ProductionStationId } from './production';
 export * from './production';
 export * from './planning';
 export * from './caseData';
+export * from './ai';
 
 export type StationId = ProductionStationId;
 export type StationStatus = 'running' | 'idle' | 'blocked' | 'stopped' | 'warning';

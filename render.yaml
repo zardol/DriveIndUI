@@ -9,3 +9,11 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 24.18.0
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: AI_ACCESS_TOKEN
+        sync: false
+      - key: AI_MAX_CALLS
+        value: '150'
+      - key: AI_ALLOWED_ORIGINS
+        value: https://zardol.github.io

@@ -14,6 +14,7 @@ import { ComparisonSection } from './components/ComparisonSection';
 import { DataWorkspace, type WorkspaceMode } from './components/DataWorkspace';
 import { CasePanel } from './components/CasePanel';
 import { OverviewPage } from './components/OverviewPage';
+import { AiWorkspace } from './components/AiWorkspace';
 import { WORKSPACES, pageFromHash, pageHref, type WorkspacePage } from './navigation';
 import './workspaces.css';
 
@@ -22,6 +23,7 @@ export default function App() {
   const { snapshot, connection } = session;
   const [page, setPage] = useState<WorkspacePage>(() => pageFromHash(window.location.hash));
   const [factoryVisited, setFactoryVisited] = useState(page === 'factory');
+  const [aiVisited, setAiVisited] = useState(page === 'ai');
   const [selected, setSelected] = useState<StationId>('welding');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [stationFocus, setStationFocus] = useState(0);
@@ -39,6 +41,7 @@ export default function App() {
       const next = pageFromHash(window.location.hash);
       setPage(next);
       if (next === 'factory') setFactoryVisited(true);
+      if (next === 'ai') setAiVisited(true);
       window.scrollTo({ top: 0, behavior: 'instant' });
     };
     window.addEventListener('hashchange', change);
@@ -96,6 +99,10 @@ export default function App() {
               <CasePanel view='risks' snapshot={snapshot} disabled={session.pending || stale} onCommand={session.sendCommand} />
               <details className='card method-legend'><summary>Обозначения и расчёт показателей</summary><Legend /></details>
             </div>
+          </div>
+          <div className='workspace-page' hidden={page !== 'ai'}>
+            {aiVisited && <AiWorkspace key={`${snapshot.sessionId}:${snapshot.revision}`} snapshot={snapshot} active={page === 'ai'} disabled={stale || session.pending}
+              onStation={id => { selectStation(id); setStationFocus(value => value + 1); navigate('factory'); }} />}
           </div>
         </>}
       </main>
