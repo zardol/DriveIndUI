@@ -40,7 +40,7 @@ export function estimateCaseOee(row: typeof CASE_LINES[number]) {
 export function createCaseConfig(plan: ProductionPlan = CASE_PLAN): ProductionConfig {
   const summary = summarizePlan(plan);
   return {
-    schemaVersion: 1, name: 'АЛЛЮР · тестовый кейс · октябрь 2026',
+    schemaVersion: 1, name: 'Allur · тестовый кейс · октябрь 2026',
     source: { kind: 'provided', label: CASE_SOURCE },
     shiftSeconds: 28800, shiftPlan: summary.shiftTarget,
     supplyIntervalSeconds: Math.max(1, Math.floor(28800 / summary.shiftTarget)),

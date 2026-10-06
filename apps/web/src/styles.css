@@ -208,28 +208,6 @@ select {
   gap: 10px;
 }
 
-.demo-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px 6px 11px;
-  border-radius: 999px;
-  background: var(--amber-soft);
-  border: 1px solid #e6c98a;
-  color: var(--amber-ink);
-  font-weight: 700;
-  font-size: 13.5px;
-  letter-spacing: 0.01em;
-}
-
-.demo-badge__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--amber);
-  box-shadow: 0 0 0 3px rgba(201, 138, 27, 0.22);
-}
-
 .conn-chip {
   display: inline-flex;
   align-items: center;
@@ -1755,9 +1733,6 @@ h1 {
   .kpi-grid,
   .skeleton-grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .demo-badge {
-    font-size: 12.5px;
   }
   .metrics {
     grid-template-columns: minmax(0, 1fr);
