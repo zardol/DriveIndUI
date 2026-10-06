@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { z } from 'zod';
 import { parseProductionConfig, type ProductionConfig } from '@driveindui/shared';
 import { SessionError, SessionStore } from './sessions.js';
+import { AiError, AiService, aiInputSchema } from './ai.js';
 
 const controlSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('play') }).strict(),
@@ -27,9 +28,21 @@ const comparisonSchema = z.object({
   reserveSetupMinutes: z.union([z.literal(0), z.literal(5), z.literal(10), z.literal(15)]),
 }).strict();
 
-export async function buildApp(options: { store?: SessionStore; autoTick?: boolean; logger?: boolean; publicDir?: string | false } = {}) {
+export async function buildApp(options: { store?: SessionStore; ai?: AiService; autoTick?: boolean; logger?: boolean; publicDir?: string | false } = {}) {
   const app = Fastify({ logger: options.logger ?? false, bodyLimit: 4096 });
   const store = options.store ?? new SessionStore();
+  const ai = options.ai ?? new AiService();
+  const aiOrigins = new Set((process.env.AI_ALLOWED_ORIGINS ?? 'https://zardol.github.io,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173,http://localhost:3001,http://127.0.0.1:3001').split(',').map(value => value.trim()).filter(Boolean));
+  if (process.env.RENDER_EXTERNAL_HOSTNAME) aiOrigins.add(`https://${process.env.RENDER_EXTERNAL_HOSTNAME}`);
+
+  app.addHook('onRequest', async (request, reply) => {
+    if (!request.url.startsWith('/api/ai/')) return;
+    const origin = request.headers.origin;
+    if (origin && !aiOrigins.has(origin)) return reply.status(403).send({ error: 'AI_ORIGIN_DENIED', message: 'Этот сайт не подключён к ИИ-сервису.' });
+    if (origin) reply.header('Access-Control-Allow-Origin', origin).header('Vary', 'Origin');
+    reply.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS').header('Access-Control-Allow-Headers', 'Content-Type, X-AI-Access');
+    if (request.method === 'OPTIONS') return reply.status(204).send();
+  });
 
   app.addHook('onSend', async (request, reply) => {
     reply.header('X-Content-Type-Options', 'nosniff');
@@ -38,7 +51,7 @@ export async function buildApp(options: { store?: SessionStore; autoTick?: boole
   });
 
   app.setErrorHandler((error, request, reply) => {
-    if (error instanceof SessionError) return reply.status(error.statusCode).send({ error: error.code, message: error.message });
+    if (error instanceof SessionError || error instanceof AiError) return reply.status(error.statusCode).send({ error: error.code, message: error.message });
     const statusCode = error instanceof Error && 'statusCode' in error && typeof error.statusCode === 'number' ? error.statusCode : 500;
     if (statusCode >= 400 && statusCode < 500) {
       return reply.status(statusCode).send({ error: 'INVALID_REQUEST', message: 'Некорректный запрос.' });
@@ -47,7 +60,14 @@ export async function buildApp(options: { store?: SessionStore; autoTick?: boole
     return reply.status(500).send({ error: 'INTERNAL_ERROR', message: 'Не удалось обработать запрос. Повторите попытку.' });
   });
 
-  app.get('/api/health', async () => ({ status: 'ok', version: '0.8.0', dataMode: 'organizer-test-simulation' }));
+  app.get('/api/health', async () => ({ status: 'ok', version: '0.9.0', dataMode: 'organizer-test-simulation' }));
+  app.get('/api/ai/status', async request => ai.status(request.ip));
+  app.post('/api/ai/analysis', { bodyLimit: 16384 }, async (request, reply) => {
+    ai.authorize(typeof request.headers['x-ai-access'] === 'string' ? request.headers['x-ai-access'] : undefined, request.ip);
+    const input = aiInputSchema.safeParse(request.body);
+    if (!input.success) return reply.status(400).send({ error: 'AI_INVALID_INPUT', message: 'Некорректный набор производственных показателей.' });
+    return ai.analyze(input.data, request.ip);
+  });
 
   app.post('/api/sessions', async (request, reply) => {
     if (!z.object({}).strict().safeParse(request.body ?? {}).success) {

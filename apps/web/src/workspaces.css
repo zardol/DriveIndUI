@@ -1058,11 +1058,12 @@
   }
   .workbench .rail__nav ul {
     display:grid;
-    grid-template-columns:repeat(5,1fr);
+    grid-template-columns:repeat(6,minmax(0,1fr));
     gap:4px;
   }
   .workbench .rail__link {
     color:#6f8165;
+    min-width:0;
     padding:7px 2px;
     font-size:9px;
     border-radius:7px;

@@ -1,7 +1,7 @@
-import { BarChart3, Box, CalendarRange, Database, GitCompareArrows, Layers3 } from 'lucide-react';
+import { BarChart3, Box, BrainCircuit, CalendarRange, Database, GitCompareArrows, Layers3 } from 'lucide-react';
 import { WORKSPACES, pageHref, type WorkspacePage } from '../navigation';
 
-const ICONS = { overview: BarChart3, factory: Box, plan: CalendarRange, decisions: GitCompareArrows, data: Database };
+const ICONS = { overview: BarChart3, factory: Box, plan: CalendarRange, decisions: GitCompareArrows, data: Database, ai: BrainCircuit };
 export function Sidebar({ page }: { page: WorkspacePage }) {
   return <aside className='rail'>
     <a className='workspace-brand' href={pageHref('overview')} aria-label='DriveIndUI — обзор'><Layers3 size={24} /><span>DriveIndUI<small>Industrial workspace</small></span></a>

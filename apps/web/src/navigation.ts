@@ -4,6 +4,7 @@ export const WORKSPACES = [
   { id: 'plan', title: 'Производственный план', label: 'План', caption: 'Заказы на месяц и квоты смены', number: '03' },
   { id: 'decisions', title: 'Сравнение решений', label: 'Решения', caption: 'Эффект до конца текущей смены', number: '04' },
   { id: 'data', title: 'Данные и настройки', label: 'Данные', caption: 'Источники, импорт и методика', number: '05' },
+  { id: 'ai', title: 'ИИ · прогноз рисков', label: 'ИИ', caption: 'Простои, узкие места и рекомендации', number: '06' },
 ] as const;
 export type WorkspacePage = typeof WORKSPACES[number]['id'];
 
