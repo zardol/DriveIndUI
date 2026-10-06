@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, BrainCircuit, ChevronDown, Clock3, Link2, LoaderCircle, RefreshCw, ShieldCheck, Sparkles, TriangleAlert } from 'lucide-react';
 import { AI_MODEL_LABEL, AI_STATION_NAMES, calculateAiIndicators, createAiInput, type AiAnalysis, type AiInput, type AiStatus, type SessionSnapshot, type StationId } from '@driveindui/shared';
-import { defaultAiUrl, fetchAiStatus, normalizeAiUrl, requestAiAnalysis } from '../aiClient';
+import { AiRequestError, defaultAiUrl, fetchAiStatus, normalizeAiAccessCode, normalizeAiUrl, requestAiAnalysis } from '../aiClient';
 import { formatClock, formatInt } from '../format';
 import { pageHref } from '../navigation';
 import '../ai.css';
@@ -18,6 +18,7 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
   const [base, setBase] = useState<string | null>(defaultAiUrl);
   const [urlDraft, setUrlDraft] = useState(() => defaultAiUrl() ?? '');
   const [accessCode, setAccessCode] = useState('');
+  const [checkedCode, setCheckedCode] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [status, setStatus] = useState<AiStatus | null>(null);
   const [checking, setChecking] = useState(false);
@@ -29,36 +30,44 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
   const request = useRef<AbortController | null>(null);
   const input = createAiInput(snapshot, horizon);
   const indicators = calculateAiIndicators(input);
-  const canAnalyze = Boolean(status?.configured && base !== null && (!status.accessRequired || accessCode.trim()));
+  const normalizedCode = normalizeAiAccessCode(accessCode);
+  const connectionUnchanged = normalizedCode === checkedCode && urlDraft.trim().replace(/\/$/, '') === (base ?? '');
+  const canAnalyze = Boolean(status?.configured && status.authorized && base !== null && connectionUnchanged);
   const oldResult = result && (snapshot.elapsedSeconds - result.input.elapsedSeconds >= 300 || result.input.horizonMinutes !== horizon);
 
   useEffect(() => {
     if (!active || base === null) return;
     const controller = new AbortController();
     setChecking(true); setConnectionError(null);
-    void fetchAiStatus(base, controller.signal).then(value => { if (!controller.signal.aborted) setStatus(value); })
+    void fetchAiStatus(base, controller.signal, checkedCode).then(value => { if (!controller.signal.aborted) setStatus(value); })
       .catch(reason => { if (!controller.signal.aborted) { setStatus(null); setConnectionError(reason instanceof Error ? reason.message : 'Нет связи с ИИ.'); } })
       .finally(() => { if (!controller.signal.aborted) setChecking(false); });
     return () => controller.abort();
-  }, [active, base, refreshStatus]);
+  }, [active, base, checkedCode, refreshStatus]);
   useEffect(() => () => request.current?.abort(), []);
 
   const analyze = () => {
     if (!canAnalyze || base === null || disabled || request.current) return;
     const controller = new AbortController(); request.current = controller;
     setPending(true); setError(null);
-    void requestAiAnalysis(base, input, accessCode.trim(), controller.signal).then(value => {
+    void requestAiAnalysis(base, input, checkedCode, controller.signal).then(value => {
       if (!controller.signal.aborted) setResult(value);
-    }).catch(reason => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Анализ не получен.'); })
+    }).catch(reason => { if (!controller.signal.aborted) {
+      setError(reason instanceof Error ? reason.message : 'Анализ не получен.');
+      if (reason instanceof AiRequestError && ['AI_ACCESS_REQUIRED', 'AI_ACCESS_INVALID'].includes(reason.code)) {
+        setStatus(null); setSettingsOpen(true); setConnectionError(reason.message);
+      }
+    } })
       .finally(() => { if (request.current === controller) request.current = null; if (!controller.signal.aborted) setPending(false); });
   };
   const connect = () => {
     try {
-      setBase(urlDraft.trim() ? normalizeAiUrl(urlDraft.trim()) : defaultAiUrl());
+      const nextBase = urlDraft.trim() ? normalizeAiUrl(urlDraft.trim()) : defaultAiUrl();
+      setBase(nextBase); setUrlDraft(nextBase ?? ''); setAccessCode(normalizedCode); setCheckedCode(normalizedCode);
       setStatus(null); setConnectionError(null); setError(null); setRefreshStatus(value => value + 1);
     } catch (reason) { setConnectionError(reason instanceof Error ? reason.message : 'Проверьте адрес.'); }
   };
-  const statusLabel = checking ? 'Подключение…' : status?.configured ? status.accessRequired && !accessCode.trim() ? 'Нужен код доступа' : 'Готов к анализу' : 'OpenAI не подключён';
+  const statusLabel = checking ? 'Проверяем подключение…' : canAnalyze ? 'Готов к анализу' : connectionError ? 'Подключение не подтверждено' : status?.configured ? normalizedCode ? 'Проверьте код доступа' : 'Нужен код доступа' : 'OpenAI не подключён';
 
   return <div className='ai-workspace'>
     <section className='ai-hero'>
@@ -83,14 +92,15 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
     {settingsOpen && <section className='card ai-settings'>
       <div><h3>Подключение к ИИ-сервису</h3><p>API-ключ хранится на сервере. Код доступа к демонстрации остаётся только в памяти этой вкладки.</p></div>
       <label>Адрес сервера<input type='url' placeholder='https://your-server.example' value={urlDraft} onChange={event => setUrlDraft(event.target.value)} autoComplete='off' /></label>
-      <label>Код доступа<input type='password' value={accessCode} onChange={event => setAccessCode(event.target.value)} autoComplete='off' placeholder='Если задан владельцем сервера' /></label>
+      <label>Код доступа<input type='password' value={accessCode} onChange={event => { setAccessCode(event.target.value); setConnectionError(null); }} autoComplete='off' placeholder='Только строка кода демонстрации' /></label>
       <button className='btn btn--primary' type='button' onClick={connect} disabled={checking || pending}>Проверить подключение</button>
       {connectionError && <p role='alert' className='ai-error'>{connectionError}</p>}
-      {status?.configured && <p role='status' className='ai-connection-success'><ShieldCheck size={16} />OpenAI подключён на сервере.</p>}
+      {canAnalyze && !checking && <p role='status' className='ai-connection-success'><ShieldCheck size={16} />Доступ подтверждён. Можно запускать ИИ-анализ.</p>}
+      {status?.configured && !canAnalyze && !checking && !connectionError && <p>Сервер доступен. Введите код демонстрации и нажмите «Проверить подключение».</p>}
     </section>}
 
     {error && <div role='alert' className='ai-alert'><TriangleAlert size={18} /><span>{error}</span></div>}
-    {!canAnalyze && !pending && <div className='ai-connection-note'><BrainCircuit size={18} /><p>{checking ? 'Подключаемся к ИИ-сервису. Первый запуск после простоя может занять около минуты.' : base === null ? 'Для ИИ-прогноза подключите сервер OpenAI. Ниже доступна локальная оценка мощности.' : status?.accessRequired && !accessCode.trim() ? 'Введите код доступа в настройках подключения, чтобы запустить ИИ-анализ.' : connectionError ?? 'Сервер OpenAI ещё не готов. Локальная оценка мощности работает независимо от него.'}</p><button type='button' onClick={() => setSettingsOpen(true)}>Подключить <ArrowUpRight size={15} /></button></div>}
+    {!canAnalyze && !pending && <div className='ai-connection-note'><BrainCircuit size={18} /><p>{checking ? 'Подключаемся к ИИ-сервису. Первый запуск после простоя может занять около минуты.' : connectionError ?? (base === null ? 'Для ИИ-прогноза подключите сервер OpenAI. Ниже доступна локальная оценка мощности.' : status?.configured ? 'Введите код демонстрации и подтвердите его кнопкой «Проверить подключение».' : 'Сервер OpenAI ещё не готов. Локальная оценка мощности работает независимо от него.')}</p><button type='button' onClick={() => setSettingsOpen(true)}>Подключить <ArrowUpRight size={15} /></button></div>}
 
     {result && <section className='ai-result' aria-label='Результат анализа OpenAI' aria-busy={pending}>
       <div className='ai-result-heading'><div><span className='ai-overline'>ВЫВОД OPENAI</span><h2>{result.report.summary}</h2></div><span className='ai-report-time'><Clock3 size={14} />Срез {formatClock(result.input.elapsedSeconds)}<br />+{result.input.horizonMinutes} мин</span></div>

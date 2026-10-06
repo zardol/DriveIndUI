@@ -98,8 +98,11 @@ export class AiService {
   authorize(token: string | undefined, address: string) {
     if (!this.accessToken && this.isLoopback(address)) return;
     const actual = Buffer.from(token ?? ''); const expected = Buffer.from(this.accessToken);
-    if (!expected.length || actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+    if (!actual.length) {
       throw new AiError(401, 'AI_ACCESS_REQUIRED', 'Для ИИ-анализа нужен код доступа к серверу.');
+    }
+    if (!expected.length || actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+      throw new AiError(401, 'AI_ACCESS_INVALID', 'Код доступа не принят. Вставьте только строку кода демонстрации, без пояснений. Ключ OpenAI здесь не нужен.');
     }
   }
   private reserve() {

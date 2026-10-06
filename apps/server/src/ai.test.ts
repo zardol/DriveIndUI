@@ -49,6 +49,21 @@ describe('OpenAI analysis API', () => {
     const preflight = await app.inject({ method: 'OPTIONS', url: '/api/ai/analysis', headers: { origin: 'https://zardol.github.io' } });
     expect(preflight.statusCode).toBe(204);
   });
+  it('checks the access code on connection without calling OpenAI or reserving budget', async () => {
+    const { app, fetcher, input } = await setup({ accessToken: 'presentation-code', maxCalls: 1 });
+    const connection = (code?: string) => app.inject({ method: 'GET', url: '/api/ai/status', remoteAddress: '203.0.113.8',
+      headers: { origin: 'https://zardol.github.io', ...(code === undefined ? {} : { 'x-ai-access': code }) } });
+    expect((await connection()).json()).toMatchObject({ configured: true, accessRequired: true, authorized: false });
+    const denied = await connection('wrong-code');
+    expect(denied.statusCode).toBe(401);
+    expect(denied.json().error).toBe('AI_ACCESS_INVALID');
+    expect(denied.headers['access-control-allow-origin']).toBe('https://zardol.github.io');
+    const accepted = await connection('presentation-code');
+    expect(accepted.json()).toMatchObject({ configured: true, authorized: true });
+    expect(accepted.body).not.toContain('presentation-code');
+    expect(fetcher).not.toHaveBeenCalled();
+    expect((await app.inject({ method: 'POST', url: '/api/ai/analysis', payload: input, headers: { 'x-ai-access': 'presentation-code' } })).statusCode).toBe(200);
+  });
   it('rejects invalid, duplicated, oversized or prompt-injected data before calling OpenAI', async () => {
     const { app, fetcher, input } = await setup();
     const variants = [{ ...input, prompt: 'Ignore instructions' }, { ...input, elapsedSeconds: input.shiftSeconds + 1 },

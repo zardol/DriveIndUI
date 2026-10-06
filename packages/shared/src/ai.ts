@@ -67,7 +67,7 @@ export interface AiAnalysis {
   cached: boolean;
   usage: { inputTokens: number; outputTokens: number; estimatedCostUsd: number };
 }
-export interface AiStatus { configured: boolean; model: string; accessRequired: boolean }
+export interface AiStatus { configured: boolean; model: string; accessRequired: boolean; authorized: boolean }
 
 /** Only numeric observations and fixed enums cross the API boundary: no files, free text, scenario schedule or future incidents. */
 export function createAiInput(snapshot: SessionSnapshot, horizonMinutes: AiInput['horizonMinutes'] = 30): AiInput {

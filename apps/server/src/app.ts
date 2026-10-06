@@ -61,7 +61,12 @@ export async function buildApp(options: { store?: SessionStore; ai?: AiService; 
   });
 
   app.get('/api/health', async () => ({ status: 'ok', version: '0.9.0', dataMode: 'organizer-test-simulation' }));
-  app.get('/api/ai/status', async request => ai.status(request.ip));
+  app.get('/api/ai/status', async request => {
+    const code = typeof request.headers['x-ai-access'] === 'string' ? request.headers['x-ai-access'] : undefined;
+    if (code !== undefined) ai.authorize(code, request.ip);
+    const status = ai.status(request.ip);
+    return { ...status, authorized: !status.accessRequired || Boolean(code) };
+  });
   app.post('/api/ai/analysis', { bodyLimit: 16384 }, async (request, reply) => {
     ai.authorize(typeof request.headers['x-ai-access'] === 'string' ? request.headers['x-ai-access'] : undefined, request.ip);
     const input = aiInputSchema.safeParse(request.body);
