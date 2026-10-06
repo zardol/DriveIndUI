@@ -16,7 +16,16 @@ export function defaultAiUrl(): string | null {
   if (['localhost', '127.0.0.1'].includes(window.location.hostname)) return 'http://127.0.0.1:3001';
   return null;
 }
+export function normalizeAiAccessCode(value: string): string {
+  return value.replace(/[\s\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '');
+}
+export class AiRequestError extends Error {
+  constructor(message: string, public readonly code: string) { super(message); }
+}
 async function callAi(base: string, path: string, signal: AbortSignal, body?: AiInput, accessCode?: string): Promise<unknown> {
+  const code = normalizeAiAccessCode(accessCode ?? '');
+  if (code.startsWith('sk-')) throw new AiRequestError('Это ключ OpenAI. Введите отдельный код доступа к демонстрации; API-ключ хранится только на сервере.', 'AI_ACCESS_INVALID');
+  if (code && !/^[A-Za-z0-9_-]{1,256}$/.test(code)) throw new AiRequestError('Вставьте только строку кода доступа, без заголовка и инструкции из файла.', 'AI_ACCESS_INVALID');
   const controller = new AbortController();
   const abort = () => controller.abort();
   if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
@@ -25,14 +34,15 @@ async function callAi(base: string, path: string, signal: AbortSignal, body?: Ai
   try {
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (body) headers['Content-Type'] = 'application/json';
-    if (accessCode) headers['X-AI-Access'] = accessCode;
+    if (code) headers['X-AI-Access'] = code;
     const response = await fetch(`${base}/api/ai/${path}`, { method: body ? 'POST' : 'GET', headers,
       ...(body ? { body: JSON.stringify(body) } : {}), signal: controller.signal, cache: 'no-store', credentials: 'omit' });
     let value: unknown;
     try { value = await response.json(); } catch { throw new Error('Сервер ИИ вернул некорректный ответ. Проверьте адрес подключения.'); }
     if (!response.ok) {
       const message = value && typeof value === 'object' && 'message' in value && typeof value.message === 'string' ? value.message : 'Анализ временно недоступен.';
-      throw new Error(message);
+      const errorCode = value && typeof value === 'object' && 'error' in value && typeof value.error === 'string' ? value.error : 'AI_REQUEST_FAILED';
+      throw new AiRequestError(message, errorCode);
     }
     return value;
   } catch (error) {
@@ -42,13 +52,14 @@ async function callAi(base: string, path: string, signal: AbortSignal, body?: Ai
     throw error;
   } finally { window.clearTimeout(timeout); signal.removeEventListener('abort', abort); }
 }
-export async function fetchAiStatus(base: string, signal: AbortSignal): Promise<AiStatus> {
-  const value = await callAi(base, 'status', signal);
+export async function fetchAiStatus(base: string, signal: AbortSignal, accessCode = ''): Promise<AiStatus> {
+  const value = await callAi(base, 'status', signal, undefined, accessCode);
   if (!value || typeof value !== 'object' || !('configured' in value) || typeof value.configured !== 'boolean'
     || !('accessRequired' in value) || typeof value.accessRequired !== 'boolean' || !('model' in value) || value.model !== AI_MODEL) {
     throw new Error('Этот адрес не является сервером ИИ DriveIndUI.');
   }
-  return value as AiStatus;
+  // Older servers cannot confirm access: never turn availability into authorization.
+  return { ...value, authorized: 'authorized' in value && value.authorized === true } as AiStatus;
 }
 export async function requestAiAnalysis(base: string, input: AiInput, accessCode: string, signal: AbortSignal): Promise<AiAnalysis> {
   const value = await callAi(base, 'analysis', signal, input, accessCode);
