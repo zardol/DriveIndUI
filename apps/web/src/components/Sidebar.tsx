@@ -5,7 +5,7 @@ const ICONS = { overview: BarChart3, factory: Box, plan: CalendarRange, decision
 export function Sidebar({ page }: { page: WorkspacePage }) {
   return <aside className='rail'>
     <a className='workspace-brand' href={pageHref('overview')} aria-label='DriveIndUI — обзор'><Layers3 size={24} /><span>DriveIndUI<small>Industrial workspace</small></span></a>
-    <span className='rail-caption'>ПРОИЗВОДСТВО / АЛЛЮР</span>
+    <span className='rail-caption'>ПРОИЗВОДСТВО / Allur</span>
     <nav className='rail__nav' aria-label='Основная навигация'><ul>
       {WORKSPACES.map(item => {
         const Icon = ICONS[item.id];
