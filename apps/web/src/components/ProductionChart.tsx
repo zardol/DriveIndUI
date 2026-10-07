@@ -1,12 +1,13 @@
+import { t } from '../i18n';
 import { useMemo } from 'react';
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatClock, formatInt, formatSigned } from '../format';
 import type { PlantSnapshot } from '../types';
 
-const COLOR_FACT = '#2f7f6f';
-const COLOR_PLAN = '#14181a';
+const COLOR_FACT = 'var(--accent)' ;
+const COLOR_PLAN = 'var(--ink)' ;
 const COLOR_FORECAST = '#3a9aa6';
-const COLOR_AXIS = '#6b7372';
+const COLOR_AXIS = 'var(--ink-3)' ;
 
 interface ChartRow {
   elapsedSeconds: number;
@@ -56,12 +57,12 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (entries.length === 0) return null;
   return (
     <div className='chart-tip'>
-      <p className='chart-tip__time'>Время симуляции {formatClock(Number(label), false)}</p>
+      <p className='chart-tip__time'>{t("Время симуляции ")}{t(formatClock(Number(label), false))}</p>
       {entries.map((entry) => (
         <p key={entry.dataKey ?? entry.name} className='chart-tip__row'>
           <span className='chart-tip__dot' style={{ background: entry.color }} aria-hidden='true' />
-          <span>{entry.name}</span>
-          <strong>{formatInt(Number(entry.value))} ед.</strong>
+          <span>{t(entry.name)}</span>
+          <strong>{t(formatInt(Number(entry.value)))} {t(" ед.")}</strong>
         </p>
       ))}
     </div>
@@ -88,34 +89,29 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
       <div className='card__head'>
         <div>
           <h2 id='production-title' className='card__title'>
-            Выпуск за смену
-          </h2>
+            {t("Выпуск за смену")}</h2>
         </div>
         {latest && (
           <span className='pill pill--neutral'>
-            {formatSigned(snapshot.goodUnits - latest.planUnits)} к графику
-          </span>
+            {t(formatSigned(snapshot.goodUnits - latest.planUnits))} {t(" к графику")}</span>
         )}
       </div>
 
-      <ul className='chart-legend' aria-label='Обозначения графика'>
+      <ul className='chart-legend' aria-label={t("Обозначения графика")}>
         <li>
           <span className='swatch swatch--fact' aria-hidden='true' />
-          Расчёт модели
-        </li>
+          {t("Расчёт модели")}</li>
         <li>
           <span className='swatch swatch--plan' aria-hidden='true' />
-          План
-        </li>
+          {t("План")}</li>
         <li>
           <span className='swatch swatch--forecast' aria-hidden='true' />
-          Оценка по текущему темпу
-        </li>
+          {t("Оценка по текущему темпу")}</li>
       </ul>
 
-      <p className='sr-only'>{summary}</p>
+      <p className='sr-only'>{t(summary)}</p>
 
-      <div className='chart-wrap' role='img' aria-label='График выпуска: расчёт модели, план и оценка по текущему темпу'>
+      <div className='chart-wrap' role='img' aria-label={t("График выпуска: расчёт модели, план и оценка по текущему темпу")}>
         <ResponsiveContainer width='100%' height='100%'>
           <ComposedChart data={rows} margin={{ top: 12, right: 20, bottom: 4, left: 0 }}>
             <defs>
@@ -124,7 +120,7 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
                 <stop offset='100%' stopColor={COLOR_FACT} stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke='#e8e4d9' strokeDasharray='3 4' vertical={false} />
+            <CartesianGrid stroke='var(--line)' strokeDasharray='3 4' vertical={false} />
             <XAxis
               dataKey='elapsedSeconds'
               type='number'
@@ -132,7 +128,7 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
               ticks={ticks}
               tickFormatter={(value: number) => formatClock(value, false)}
               tick={{ fill: COLOR_AXIS, fontSize: 12 }}
-              stroke='#cfc9bb'
+              stroke='var(--line-strong)'
               tickLine={false}
             />
             <YAxis
@@ -140,22 +136,22 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
               allowDecimals={false}
               width={44}
               tick={{ fill: COLOR_AXIS, fontSize: 12 }}
-              stroke='#cfc9bb'
+              stroke='var(--line-strong)'
               tickLine={false}
             />
-            <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#cfc9bb' }} />
+            <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--line-strong)' }} />
             {snapshot.elapsedSeconds > 0 && snapshot.elapsedSeconds < snapshot.shiftSeconds && (
               <ReferenceLine
                 x={snapshot.elapsedSeconds}
                 stroke='#9aa19f'
                 strokeDasharray='2 3'
-                label={{ value: 'Сейчас', position: 'insideTopLeft', fill: COLOR_AXIS, fontSize: 11 }}
+                label={t({ value: t('Сейчас'), position: 'insideTopLeft', fill: COLOR_AXIS, fontSize: 11 })}
               />
             )}
             <Area
               type='monotone'
               dataKey='goodUnits'
-              name='Расчёт модели'
+              name={t("Расчёт модели")}
               stroke={COLOR_FACT}
               strokeWidth={2.5}
               fill='url(#factFill)'
@@ -165,7 +161,7 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
             <Line
               type='linear'
               dataKey='planUnits'
-              name='План'
+              name={t("План")}
               stroke={COLOR_PLAN}
               strokeWidth={1.75}
               strokeDasharray='6 4'
@@ -175,7 +171,7 @@ export function ProductionChart({ snapshot }: { snapshot: PlantSnapshot }) {
             <Line
               type='linear'
               dataKey='forecast'
-              name='Оценка по текущему темпу'
+              name={t("Оценка по текущему темпу")}
               stroke={COLOR_FORECAST}
               strokeWidth={2}
               strokeDasharray='2 5'

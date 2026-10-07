@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { Activity, ArrowUpRight, CircleAlert, Layers3 } from 'lucide-react';
 import type { PlantSnapshot, StationId } from '../types';
 
@@ -7,19 +8,19 @@ export function ShiftFocus({ snapshot, onSelect, stale }: { snapshot: PlantSnaps
   const queue = [...snapshot.stations].sort((a, b) => b.inputQueue - a.inputQueue)[0];
   const station = incident ? snapshot.stations.find((item) => item.id === incident.stationId) : null;
   return (
-    <section className={`shift-focus${incident ? ' shift-focus--alert' : ''}`} aria-label='Фокус смены'>
+    <section className={`shift-focus${incident ? ' shift-focus--alert' : ''}`} aria-label={t("Фокус смены")}>
       <div className='shift-focus__lead'>
         {incident ? <CircleAlert size={20} aria-hidden='true' /> : <Activity size={20} aria-hidden='true' />}
         <div>
-          <span className='shift-focus__caption'>{stale ? 'Последнее состояние' : 'Фокус смены'}</span>
-          <strong>{incident ? incident.title : snapshot.elapsedSeconds === snapshot.shiftSeconds ? 'Смена завершена' : 'Активных инцидентов нет'}</strong>
+          <span className='shift-focus__caption'>{t(stale ? 'Последнее состояние' : 'Фокус смены')}</span>
+          <strong>{t(incident ? incident.title : snapshot.elapsedSeconds === snapshot.shiftSeconds ? 'Смена завершена' : 'Активных инцидентов нет')}</strong>
         </div>
-        {incident && <button className='btn btn--small' onClick={() => onSelect(incident.stationId)}>{station?.name ?? 'Показатели'}<ArrowUpRight size={14} aria-hidden='true' /></button>}
+        {incident && <button className='btn btn--small' onClick={() => onSelect(incident.stationId)}>{t(station?.name ?? 'Показатели')}<ArrowUpRight size={14} aria-hidden='true' /></button>}
       </div>
       {queue && <button className='queue-focus' onClick={() => onSelect(queue.id)}>
         <Layers3 size={18} aria-hidden='true' />
-        <span>{queue.inputQueue > 0 ? `Наибольшая очередь: ${queue.name}` : 'Входные очереди свободны'}</span>
-        <strong>{queue.inputQueue}/{queue.bufferCapacity}</strong>
+        <span>{t(queue.inputQueue > 0 ? `Наибольшая очередь: ${queue.name}` : 'Входные очереди свободны')}</span>
+        <strong>{t(queue.inputQueue)}/{t(queue.bufferCapacity)}</strong>
       </button>}
     </section>
   );

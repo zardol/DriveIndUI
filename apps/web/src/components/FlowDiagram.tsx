@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { clamp01, clampPercent, formatInt } from '../format';
 import { STATUS_META } from '../status';
@@ -44,9 +45,9 @@ function StationNode({ station, nodeIndex, selected, animate, stale, incident, o
   const cycle = clamp01(station.progress);
   const utilization = clampPercent(station.utilizationPercent);
   const label =
-    `${station.name}. Статус: ${meta.label}. Очередь ${station.inputQueue} из ${station.bufferCapacity}. ` +
-    `Загрузка ${Math.round(utilization)} процентов.` +
-    (incident ? ' Есть активный инцидент.' : '');
+    t(`${station.name}. Статус: ${meta.label}. Очередь ${station.inputQueue} из ${station.bufferCapacity}. `) +
+    t(`Загрузка ${Math.round(utilization)} процентов.`) +
+    (incident ? t(' Есть активный инцидент.') : '');
 
   const handleKey = (event: KeyboardEvent<SVGGElement>): void => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -62,20 +63,20 @@ function StationNode({ station, nodeIndex, selected, animate, stale, incident, o
       role='button'
       tabIndex={0}
       aria-pressed={selected}
-      aria-label={label}
+      aria-label={t(label)}
       onClick={() => onSelect(station.id)}
       onKeyDown={handleKey}
     >
-      <title>{meta.hint}</title>
+      <title>{t(meta.hint)}</title>
       <rect className='flow-focus' x={-4} y={-4} width={NODE_W + 8} height={NODE_H + 8} rx={14} />
       <rect className='flow-panel' width={NODE_W} height={NODE_H} rx={10} />
       <rect className='flow-top-stripe' x={10} y={0} width={NODE_W - 20} height={3} rx={1.5} />
 
       <text className='flow-caption' x={10} y={18}>
-        {`ЭТАП ${nodeIndex}`}
+        {t(`ЭТАП ${nodeIndex}`)}
       </text>
       <text className='flow-name' x={10} y={34}>
-        {station.name}
+        {t(station.name)}
       </text>
 
       <g className='flow-badge-wrap' transform='translate(10 186)'>
@@ -83,7 +84,7 @@ function StationNode({ station, nodeIndex, selected, animate, stale, incident, o
           <rect className='flow-badge' width={NODE_W - 20} height={18} rx={9} />
           <StatusGlyph status={station.status} size={14} x={4} y={3} />
           <text className='flow-badge-text' x={22} y={14}>
-            {meta.label}
+            {t(meta.label)}
           </text>
         </g>
       </g>
@@ -99,10 +100,9 @@ function StationNode({ station, nodeIndex, selected, animate, stale, incident, o
       </g>
 
       <text className='flow-metric-lbl' x={10} y={135}>
-        Цикл
-      </text>
+        {t("Цикл")}</text>
       <text className='flow-metric-val' x={NODE_W - 10} y={135} textAnchor='end'>
-        {station.inProcess ? `${Math.round(cycle * 100)}%` : '—'}
+        {t(station.inProcess ? `${Math.round(cycle * 100)}%` : '—')}
       </text>
       <rect className='flow-bar-bg' x={10} y={141} width={NODE_W - 20} height={6} rx={3} />
       <rect
@@ -115,10 +115,9 @@ function StationNode({ station, nodeIndex, selected, animate, stale, incident, o
       />
 
       <text className='flow-metric-lbl' x={10} y={166}>
-        Загрузка
-      </text>
+        {t("Загрузка")}</text>
       <text className='flow-metric-val' x={NODE_W - 10} y={166} textAnchor='end'>
-        {`${Math.round(utilization)}%`}
+        {t(`${Math.round(utilization)}%`)}
       </text>
       <rect className='flow-bar-bg' x={10} y={172} width={NODE_W - 20} height={6} rx={3} />
       <rect
@@ -135,7 +134,7 @@ function StationNode({ station, nodeIndex, selected, animate, stale, incident, o
           className={`flow-alert flow-alert--${incident.severity}${animate && !stale ? ' is-pulsing' : ''}`}
           transform={`translate(${NODE_W - 8} 8)`}
         >
-          <title>{`Активный инцидент: ${incident.title}`}</title>
+          <title>{t(`Активный инцидент: ${incident.title}`)}</title>
           <circle r={9} />
           <text textAnchor='middle' y={3.5}>
             !
@@ -152,28 +151,24 @@ function SupplyNode({ introducedUnits }: { introducedUnits: number }) {
       className='flow-node node--terminal'
       transform={`translate(${nodeX(0)} ${NODE_Y})`}
       role='group'
-      aria-label={`Склад снабжения. Подано на линию ${introducedUnits} единиц. Значение расчётное.`}
+      aria-label={t(`Склад снабжения. Подано на линию ${introducedUnits} единиц. Значение расчётное.`)}
     >
       <rect className='flow-panel' width={NODE_W} height={NODE_H} rx={10} />
       <rect className='flow-top-stripe flow-top-stripe--term' x={10} y={0} width={NODE_W - 20} height={3} rx={1.5} />
       <text className='flow-caption' x={10} y={18}>
-        ИСТОЧНИК
-      </text>
+        {t("ИСТОЧНИК")}</text>
       <text className='flow-name' x={10} y={34}>
-        Склад снабжения
-      </text>
+        {t("Склад снабжения")}</text>
       <g transform='translate(8 42)'>
         <EquipmentIllustration type='supply' />
       </g>
       <text className='flow-term-num' x={10} y={146}>
-        {formatInt(introducedUnits)}
+        {t(formatInt(introducedUnits))}
       </text>
       <text className='flow-term-sub' x={10} y={164}>
-        подано на линию
-      </text>
+        {t("подано на линию")}</text>
       <text className='flow-term-note' x={10} y={180}>
-        расчётная величина
-      </text>
+        {t("расчётная величина")}</text>
     </g>
   );
 }
@@ -192,27 +187,25 @@ function FinishedNode({
       className='flow-node node--terminal'
       transform={`translate(${nodeX(5)} ${NODE_Y})`}
       role='group'
-      aria-label={`Готовые автомобили: ${goodUnits} из ${shiftPlan} по плану, брак ${rejectedUnits}.`}
+      aria-label={t(`Готовые автомобили: ${goodUnits} из ${shiftPlan} по плану, брак ${rejectedUnits}.`)}
     >
       <rect className='flow-panel' width={NODE_W} height={NODE_H} rx={10} />
       <rect className='flow-top-stripe flow-top-stripe--term' x={10} y={0} width={NODE_W - 20} height={3} rx={1.5} />
       <text className='flow-caption' x={10} y={18}>
-        ВЫХОД
-      </text>
+        {t("ВЫХОД")}</text>
       <text className='flow-name' x={10} y={34}>
-        Готовые автомобили
-      </text>
+        {t("Готовые автомобили")}</text>
       <g transform='translate(8 42)'>
         <EquipmentIllustration type='finished' />
       </g>
       <text className='flow-term-num' x={10} y={146}>
-        {formatInt(goodUnits)}
+        {t(formatInt(goodUnits))}
       </text>
       <text className='flow-term-sub' x={10} y={164}>
-        {`из ${formatInt(shiftPlan)} по плану`}
+        {t(`из ${formatInt(shiftPlan)} по плану`)}
       </text>
       <text className='flow-term-note' x={10} y={180}>
-        {`брак: ${formatInt(rejectedUnits)}`}
+        {t(`брак: ${formatInt(rejectedUnits)}`)}
       </text>
     </g>
   );
@@ -258,10 +251,10 @@ export function FlowDiagram({ snapshot, selected, animate, stale, onSelect }: Fl
 
       queueNode = (
         <g className='flow-queue'>
-          <title>{`Очередь перед станцией «${target.name}»: ${target.inputQueue} из ${capacity}`}</title>
+          <title>{t(`Очередь перед станцией «${target.name}»: ${target.inputQueue} из ${capacity}`)}</title>
           <rect className='flow-queue-box' x={qX} y={qY} width={qBoxW} height={qBoxH} rx={4} />
           <text className='flow-queue-title' x={qX + qBoxW / 2} y={qY + 12} textAnchor='middle'>
-            {`Очередь ${target.inputQueue}/${capacity}`}
+            {t(`Очередь ${target.inputQueue}/${capacity}`)}
           </text>
           {Array.from({ length: capacity }, (_, k) => (
             <rect
@@ -292,11 +285,10 @@ export function FlowDiagram({ snapshot, selected, animate, stale, onSelect }: Fl
           className='flow-conn-arrow'
           points={`${x2 - 10},${LINE_Y - 4} ${x2 - 2},${LINE_Y} ${x2 - 10},${LINE_Y + 4}`}
         />
-        {queueNode}
+        {t(queueNode)}
         {i === 5 && (
           <text className='flow-queue-title' x={x1 + GAP / 2} y={LINE_Y - 12} textAnchor='middle'>
-            Годные
-          </text>
+            {t("Годные")}</text>
         )}
       </g>
     );
@@ -306,17 +298,17 @@ export function FlowDiagram({ snapshot, selected, animate, stale, onSelect }: Fl
     <div
       className={`flow-container flow-scroll${stale ? ' is-stale' : ''}`}
       role='region'
-      aria-label='Схема линии (прокручиваемая область)'
+      aria-label={t("Схема линии (прокручиваемая область)")}
       tabIndex={0}
     >
       <svg
         className='flow-svg'
         viewBox={`0 0 ${VB_W} ${VB_H}`}
         role='group'
-        aria-label='Схема производственной линии: склад снабжения, сварка, окраска, сборка, контроль качества, готовые автомобили'
+        aria-label={t("Схема производственной линии: склад снабжения, сварка, окраска, сборка, контроль качества, готовые автомобили")}
       >
         <line x1={0} y1={LINE_Y} x2={VB_W} y2={LINE_Y} className='flow-floor-line' />
-        {connectors}
+        {t(connectors)}
         <SupplyNode introducedUnits={snapshot.introducedUnits} />
         {stations.map((station, index) => (
           <StationNode
@@ -336,13 +328,12 @@ export function FlowDiagram({ snapshot, selected, animate, stale, onSelect }: Fl
           rejectedUnits={snapshot.rejectedUnits}
         />
         <text className='flow-footnote' x={MARGIN} y={VB_H - 12}>
-          {`В потоке: ${formatInt(snapshot.wip)} ед.`}
+          {t(`В потоке: ${formatInt(snapshot.wip)} ед.`)}
         </text>
         <text className='flow-footnote' x={VB_W - MARGIN} y={VB_H - 12} textAnchor='end'>
-          Схема иллюстративная · расчёт модели
-        </text>
+          {t("Схема иллюстративная · расчёт модели")}</text>
       </svg>
-      <p className='flow-hint'>Прокрутите схему по горизонтали, чтобы увидеть все этапы.</p>
+      <p className='flow-hint'>{t("Прокрутите схему по горизонтали, чтобы увидеть все этапы.")}</p>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { clamp01, formatClock, formatDuration } from '../format';
 import type { SessionSnapshot } from '../types';
 
@@ -28,21 +29,21 @@ export function ClockCard({ snapshot, stale }: ClockCardProps) {
   }
 
   return (
-    <section className='card clock' aria-label='Виртуальные часы смены'>
+    <section className='card clock' aria-label={t("Виртуальные часы смены")}>
       <div className='clock__top'>
-        <span className='clock__label'>Время смены (симуляция)</span>
+        <span className='clock__label'>{t("Время смены (симуляция)")}</span>
         <span className={`pill pill--${tone}`}>
           {tone === 'run' && <span className='pill__dot' aria-hidden='true' />}
-          {label}
+          {t(label)}
         </span>
       </div>
-      <p className='clock__time' aria-label={`Время в симуляции ${formatClock(elapsedSeconds)}`}>
-        {formatClock(elapsedSeconds)}
+      <p className='clock__time' aria-label={t(`Время в симуляции ${formatClock(elapsedSeconds)}`)}>
+        {t(formatClock(elapsedSeconds))}
       </p>
       <div
         className='bar'
         role='progressbar'
-        aria-label='Прогресс смены'
+        aria-label={t("Прогресс смены")}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(ratio * 100)}
@@ -50,7 +51,7 @@ export function ClockCard({ snapshot, stale }: ClockCardProps) {
         <div className='bar__fill' style={{ width: `${ratio * 100}%` }} />
       </div>
       <p className='clock__meta'>
-        {formatClock(0, false)}–{formatClock(shiftSeconds, false)} · прошло {formatDuration(elapsedSeconds)}
+        {t(formatClock(0, false))}–{t(formatClock(shiftSeconds, false))} {t(" · прошло ")}{t(formatDuration(elapsedSeconds))}
       </p>
     </section>
   );

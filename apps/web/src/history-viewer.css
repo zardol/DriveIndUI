@@ -112,11 +112,11 @@
 .history-btn-primary {
   background: var(--history-green);
   border-color: var(--history-green);
-  color: #ffffff;
+  color: light-dark(#ffffff, #ffffff);
 }
 
 .history-btn-primary:hover:not(:disabled) {
-  background: #266a5c;
+  background: light-dark(#266a5c, #14392e);
 }
 
 .history-btn:disabled {
@@ -382,7 +382,7 @@
 }
 
 .history-row-selected {
-  background: #eaf3f0;
+  background: light-dark(#eaf3f0, #21352c);
 }
 
 .history-row-button {
@@ -412,12 +412,12 @@
 .history-row-button[aria-current='true'] {
   border-color: var(--history-green);
   background: var(--history-green);
-  color: #ffffff;
+  color: light-dark(#ffffff, #ffffff);
   font-weight: 600;
 }
 
 .history-row-button[aria-current='true'] small {
-  color: #ffffff;
+  color: light-dark(#ffffff, #ffffff);
 }
 
 .history-sr-only {

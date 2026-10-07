@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { Gauge, ShieldCheck, Timer, Factory } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -20,15 +21,15 @@ function KpiCard({ Icon, label, tone = 'default', children, note, progress }: Kp
         <span className='kpi__icon' aria-hidden='true'>
           <Icon size={18} />
         </span>
-        <h3 className='kpi__label'>{label}</h3>
+        <h3 className='kpi__label'>{t(label)}</h3>
       </header>
-      <p className='kpi__value'>{children}</p>
+      <p className='kpi__value'>{t(children)}</p>
       {progress !== undefined && (
         <div className='bar bar--thin' aria-hidden='true'>
           <div className='bar__fill' style={{ width: `${clamp01(progress) * 100}%` }} />
         </div>
       )}
-      <p className='kpi__note'>{note}</p>
+      <p className='kpi__note'>{t(note)}</p>
     </article>
   );
 }
@@ -40,53 +41,53 @@ export function KpiGrid({ snapshot }: { snapshot: PlantSnapshot }) {
   const delta = latest ? goodUnits - latest.planUnits : null;
 
   return (
-    <section className='kpi-grid' aria-label='Ключевые показатели смены'>
+    <section className='kpi-grid' aria-label={t("Ключевые показатели смены")}>
       <KpiCard
         Icon={Factory}
-        label='Годный выпуск'
+        label={t("Годный выпуск")}
         progress={shiftPlan > 0 ? goodUnits / shiftPlan : 0}
         note={
           latest && delta !== null ? (
             <>
-              <strong>{delta === 0 ? 'По графику' : `${formatSigned(delta)} к графику`}</strong> · сейчас нужно {formatInt(latest.planUnits)}
+              <strong>{t(delta === 0 ? 'По графику' : `${formatSigned(delta)} к графику`)}</strong> {t(" · сейчас нужно ")}{t(formatInt(latest.planUnits))}
             </>
           ) : (
             'Данные о графике появятся после старта'
           )
         }
       >
-        {formatInt(goodUnits)}
-        <span className='kpi__unit'> / {formatInt(shiftPlan)} авто</span>
+        {t(formatInt(goodUnits))}
+        <span className='kpi__unit'> / {t(formatInt(shiftPlan))} {t(" авто")}</span>
       </KpiCard>
 
       <KpiCard
         Icon={Gauge}
-        label='Производительность'
+        label={t("Производительность")}
         note={`В потоке: ${formatInt(wip)} ед. · брак: ${formatInt(rejectedUnits)} ед.`}
       >
-        {formatOne(throughputPerHour)}
-        <span className='kpi__unit'> ед./ч</span>
+        {t(formatOne(throughputPerHour))}
+        <span className='kpi__unit'> {t(" ед./ч")}</span>
       </KpiCard>
 
       <KpiCard
         Icon={Timer}
-        label='Простой оборудования'
+        label={t("Простой оборудования")}
         tone={downtimeSeconds > 0 ? 'warn' : 'default'}
-        note='Сумма остановок участков'
+        note={t("Сумма остановок участков")}
       >
-        {formatDuration(downtimeSeconds)}
+        {t(formatDuration(downtimeSeconds))}
       </KpiCard>
 
       <KpiCard
         Icon={ShieldCheck}
-        label='Доля годных'
+        label={t("Доля годных")}
         note={
           qualityPercent === null
             ? 'Нет завершённых автомобилей'
             : `Годных: ${formatInt(goodUnits)} · брак: ${formatInt(rejectedUnits)} ед.`
         }
       >
-        {qualityPercent === null ? '—' : formatOne(qualityPercent)}
+        {t(qualityPercent === null ? '—' : formatOne(qualityPercent))}
         {qualityPercent !== null && <span className='kpi__unit'> %</span>}
       </KpiCard>
     </section>

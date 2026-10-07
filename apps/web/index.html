@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f5f3ec" />
     <meta
       name="description"
@@ -13,6 +13,13 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2314181a'/%3E%3Cpath d='M7 22V12l6 4v-4l6 4v-4l6 4v6z' fill='%232f7f6f'/%3E%3C/svg%3E"
     />
+    <script>
+      try {
+        var settings = JSON.parse(localStorage.getItem('driveindui.preferences') || '{}');
+        document.documentElement.dataset.theme = settings.theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.lang = ['ru', 'kk', 'en'].includes(settings.language) ? settings.language : 'ru';
+      } catch (_) {}
+    </script>
     <title>DriveIndUI — Drive Industrial UI</title>
   </head>
   <body>

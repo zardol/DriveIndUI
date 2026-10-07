@@ -1,3 +1,4 @@
+import { t } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { ControlBar } from './components/ControlBar';
@@ -17,8 +18,11 @@ import { OverviewPage } from './components/OverviewPage';
 import { AiWorkspace } from './components/AiWorkspace';
 import { WORKSPACES, pageFromHash, pageHref, type WorkspacePage } from './navigation';
 import './workspaces.css';
+import './appearance.css';
+import { usePreferences } from './preferences';
 
 export default function App() {
+  const { language } = usePreferences();
   const session = useSession();
   const { snapshot, connection } = session;
   const [page, setPage] = useState<WorkspacePage>(() => pageFromHash(window.location.hash));
@@ -48,33 +52,33 @@ export default function App() {
     return () => window.removeEventListener('hashchange', change);
   }, []);
   useEffect(() => {
-    document.title = `${meta.label} · DriveIndUI`;
-    heading.current?.focus({ preventScroll: true });
-  }, [page, meta.label]);
+    document.title = `${t(meta.label)} · DriveIndUI`;
+  }, [page, meta.label, language]);
+  useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [page]);
 
   return <div className='app stage2 workbench'>
-    <a href='#workspace-content' className='skip-link' onClick={event => { event.preventDefault(); heading.current?.focus(); }}>К содержимому</a>
+    <a href='#workspace-content' className='skip-link' onClick={event => { event.preventDefault(); heading.current?.focus(); }}>{t("К содержимому")}</a>
     <Sidebar page={page} />
     <div className='main'>
       <TopBar connection={connection} sessionId={snapshot?.sessionId ?? null} />
       <main className='content' id='workspace-content'>
         <header className='workspace-heading'>
-          <div><p className='workspace-eyebrow'>{meta.number} / {meta.caption}</p><h1 ref={heading} tabIndex={-1}>{meta.title}</h1></div>
-          {page === 'overview' && <a className='btn btn--primary' href={pageHref('factory')}>Открыть цех <ArrowUpRight size={16} /></a>}
+          <div><p className='workspace-eyebrow'>{t(meta.number)} / {t(meta.caption)}</p><h1 ref={heading} tabIndex={-1}>{t(meta.title)}</h1></div>
+          {page === 'overview' && <a className='btn btn--primary' href={pageHref('factory')}>{t("Открыть цех ")}<ArrowUpRight size={16} /></a>}
         </header>
         {!snapshot ? (stale ? <ErrorState message={session.connectionError} onRetry={session.retryNow} /> : <LoadingState />) : <>
           {stale && <ConnectionBanner message={session.connectionError} lastSyncAt={session.lastSyncAt} onRetry={session.retryNow} />}
           {page !== 'data' && <ControlBar snapshot={snapshot} pending={session.pending} offline={stale} error={session.controlError} onCommand={session.sendCommand} onDismissError={session.dismissControlError} />}
-          {page === 'data' && session.controlError && <p className='alert alert--error' role='alert'>{session.controlError}</p>}
+          {page === 'data' && session.controlError && <p className='alert alert--error' role='alert'>{t(session.controlError)}</p>}
 
           {page === 'overview' && <OverviewPage snapshot={snapshot} stale={stale} onStation={id => { selectStation(id); setStationFocus(value => value + 1); navigate('factory'); }} />}
 
           <div className='workspace-page' hidden={page !== 'factory'}>
-            {factoryVisited && <section className='card factory-workspace' aria-label='Производственная линия'>
+            {factoryVisited && <section className='card factory-workspace' aria-label={t("Производственная линия")}>
               <FactoryView snapshot={snapshot} selected={selected} onSelect={selectStation} animate={animate && page === 'factory'} active={page === 'factory'} stationFocus={stationFocus} stale={stale}
                 onTogglePlayback={() => session.sendCommand({ action: snapshot.running ? 'pause' : 'play' })} controlsDisabled={stale || session.pending} />
               <details className='station-disclosure' open={detailsOpen} onToggle={event => setDetailsOpen(event.currentTarget.open)}>
-                <summary>Показатели · {snapshot.stations.find(station => station.id === selected)?.name}</summary>
+                <summary>{t("Показатели · ")}{t(snapshot.stations.find(station => station.id === selected)?.name)}</summary>
                 <StationDetails snapshot={snapshot} selected={selected} onSelect={selectStation} />
               </details>
             </section>}
@@ -86,18 +90,18 @@ export default function App() {
             <ComparisonSection key={`${snapshot.sessionId}:${snapshot.revision}`} snapshot={snapshot} disabled={stale || session.pending} />
           </div>
           <div className='workspace-page data-page' hidden={page !== 'data'}>
-            <div className='workspace-tabs' role='group' aria-label='Раздел данных'>
+            <div className='workspace-tabs' role='group' aria-label={t("Раздел данных")}>
               {([{ id: 'facts', name: 'Показатели кейса' }, { id: 'import', name: 'Импорт и параметры' }, { id: 'method', name: 'Риски и методика' }] as const).map(tab =>
-                <button key={tab.id} type='button' aria-pressed={dataTab === tab.id} onClick={() => setDataTab(tab.id)}>{tab.name}</button>)}
+                <button key={tab.id} type='button' aria-pressed={dataTab === tab.id} onClick={() => setDataTab(tab.id)}>{t(tab.name)}</button>)}
             </div>
             <div hidden={dataTab !== 'facts'}><CasePanel view='facts' snapshot={snapshot} disabled={session.pending || stale} onCommand={session.sendCommand} /></div>
             <div hidden={dataTab !== 'import'}><DataWorkspace snapshot={snapshot} mode={mode} pending={session.pending} offline={stale} active={page === 'data' && dataTab === 'import'} onCommand={session.sendCommand}
               onModeChange={next => { if (next === 'history' && snapshot.running) session.sendCommand({ action: 'pause' }); setMode(next); }} /></div>
             <div hidden={dataTab !== 'method'} className='workspace-method'>
-              <section className='card method-intro'><h2>Что показывает модель</h2><p>Тестовые данные организатора за 1–2 октября. 3D и прогноз выпуска — сценарный расчёт, без подключения к оборудованию завода.</p>
-                <p>Смена сохраняется при переходе между страницами. Обновление публичного стенда начинает её заново; перед этим можно скачать параметры в разделе импорта.</p></section>
+              <section className='card method-intro'><h2>{t("Что показывает модель")}</h2><p>{t("Тестовые данные организатора за 1–2 октября. 3D и прогноз выпуска — сценарный расчёт, без подключения к оборудованию завода.")}</p>
+                <p>{t("Смена сохраняется при переходе между страницами. Обновление публичного стенда начинает её заново; перед этим можно скачать параметры в разделе импорта.")}</p></section>
               <CasePanel view='risks' snapshot={snapshot} disabled={session.pending || stale} onCommand={session.sendCommand} />
-              <details className='card method-legend'><summary>Обозначения и расчёт показателей</summary><Legend /></details>
+              <details className='card method-legend'><summary>{t("Обозначения и расчёт показателей")}</summary><Legend /></details>
             </div>
           </div>
           <div className='workspace-page' hidden={page !== 'ai'}>

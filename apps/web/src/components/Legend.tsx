@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { STATUS_META, STATUS_ORDER } from '../status';
 import { StatusGlyph } from './StatusGlyph';
 
@@ -7,14 +8,13 @@ export function Legend() {
       <div className='card__head'>
         <div>
           <h2 id='legend-title' className='card__title'>
-            Легенда
-          </h2>
-          <p className='card__sub'>Как читать схему и график</p>
+            {t("Легенда")}</h2>
+          <p className='card__sub'>{t("Как читать схему и график")}</p>
         </div>
       </div>
 
       <div className='legend'>
-        <h3 className='legend__title'>Статусы станций</h3>
+        <h3 className='legend__title'>{t("Статусы станций")}</h3>
         <ul className='legend__list'>
           {STATUS_ORDER.map((status) => (
             <li key={status} className={`st--${status}`}>
@@ -22,14 +22,14 @@ export function Legend() {
                 <StatusGlyph status={status} size={16} />
               </span>
               <span>
-                <strong>{STATUS_META[status].label}</strong>
-                <span className='muted'> — {STATUS_META[status].hint}</span>
+                <strong>{t(STATUS_META[status].label)}</strong>
+                <span className='muted'> — {t(STATUS_META[status].hint)}</span>
               </span>
             </li>
           ))}
         </ul>
 
-        <h3 className='legend__title'>Элементы схемы</h3>
+        <h3 className='legend__title'>{t("Элементы схемы")}</h3>
         <ul className='legend__list'>
           <li>
             <span className='legend__glyph'>
@@ -39,8 +39,8 @@ export function Legend() {
               </svg>
             </span>
             <span>
-              <strong>Очередь</strong>
-              <span className='muted'> — занятые и свободные места буфера перед станцией; янтарный цвет — буфер почти полон.</span>
+              <strong>{t("Очередь")}</strong>
+              <span className='muted'> {t(" — занятые и свободные места буфера перед станцией; янтарный цвет — буфер почти полон.")}</span>
             </span>
           </li>
           <li>
@@ -50,8 +50,8 @@ export function Legend() {
               </svg>
             </span>
             <span>
-              <strong>Бегущий пунктир</strong>
-              <span className='muted'> — поток изделий; анимация идёт только при запущенной симуляции и живой связи.</span>
+              <strong>{t("Бегущий пунктир")}</strong>
+              <span className='muted'> {t(" — поток изделий; анимация идёт только при запущенной симуляции и живой связи.")}</span>
             </span>
           </li>
           <li>
@@ -64,18 +64,15 @@ export function Legend() {
               </svg>
             </span>
             <span>
-              <strong>Значок «!»</strong>
-              <span className='muted'> — у станции есть активный инцидент.</span>
+              <strong>{t("Значок «!»")}</strong>
+              <span className='muted'> {t(" — у станции есть активный инцидент.")}</span>
             </span>
           </li>
         </ul>
 
-        <h3 className='legend__title'>О данных</h3>
+        <h3 className='legend__title'>{t("О данных")}</h3>
         <p className='muted legend__about'>
-          Склад снабжения показывает число поданных на линию изделий. При занятом входе очередная подача пропускается.
-          НЗП включает автомобили между контролем качества и выходом; выпуск учитывается на выходе с линии.
-          Показатели рассчитаны моделью, схема иллюстративная.
-        </p>
+          {t("Склад снабжения показывает число поданных на линию изделий. При занятом входе очередная подача пропускается. НЗП включает автомобили между контролем качества и выходом; выпуск учитывается на выходе с линии. Показатели рассчитаны моделью, схема иллюстративная.")}</p>
       </div>
     </>
   );

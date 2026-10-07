@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { RefreshCw, WifiOff } from 'lucide-react';
 import { formatLocalTime } from '../format';
 
@@ -15,8 +16,8 @@ export function LoadingState() {
     <div className='state-wrap'>
       <div className='card state' role='status' aria-live='polite'>
         <Spinner />
-        <h1 className='state__title'>Запускаем демонстрационную смену…</h1>
-        <p className='state__text'>Создаём сессию симуляции и получаем первые данные линии.</p>
+        <h1 className='state__title'>{t("Запускаем демонстрационную смену…")}</h1>
+        <p className='state__text'>{t("Создаём сессию симуляции и получаем первые данные линии.")}</p>
       </div>
       <div className='skeleton-grid' aria-hidden='true'>
         <div className='skeleton' />
@@ -40,13 +41,12 @@ export function ErrorState({ message, onRetry }: ErrorStateProps) {
         <span className='state__icon'>
           <WifiOff size={26} aria-hidden='true' />
         </span>
-        <h1 className='state__title'>Не удалось подключиться к серверу симуляции</h1>
-        <p className='state__text'>{message ?? 'Сервер недоступен.'}</p>
-        <p className='state__hint'>Автоматические попытки продолжаются каждые несколько секунд.</p>
+        <h1 className='state__title'>{t("Не удалось подключиться к серверу симуляции")}</h1>
+        <p className='state__text'>{t(message ?? 'Сервер недоступен.')}</p>
+        <p className='state__hint'>{t("Автоматические попытки продолжаются каждые несколько секунд.")}</p>
         <button type='button' className='btn btn--primary' onClick={onRetry}>
           <RefreshCw size={16} aria-hidden='true' />
-          Повторить сейчас
-        </button>
+          {t("Повторить сейчас")}</button>
       </div>
     </div>
   );
@@ -63,15 +63,12 @@ export function ConnectionBanner({ message, lastSyncAt, onRetry }: ConnectionBan
     <div className='alert alert--warn' role='status'>
       <WifiOff size={18} aria-hidden='true' />
       <div className='alert__body'>
-        <strong>Связь с сервером потеряна.</strong>{' '}
-        Показаны последние полученные данные{lastSyncAt ? ` (получены в ${formatLocalTime(lastSyncAt)})` : ''}, схема
-        остановлена. Повторяем подключение автоматически.
-        {message ? <span className='alert__detail'> Причина: {message}</span> : null}
+        <strong>{t("Связь с сервером потеряна.")}</strong>{t(' ')}
+        {t("Показаны последние полученные данные")}{t(lastSyncAt ? ` (получены в ${formatLocalTime(lastSyncAt)})` : '')}{t(", схема остановлена. Повторяем подключение автоматически.")}{message ? <span className='alert__detail'> {t(" Причина: ")}{t(message)}</span> : null}
       </div>
       <button type='button' className='btn btn--small' onClick={onRetry}>
         <RefreshCw size={14} aria-hidden='true' />
-        Повторить
-      </button>
+        {t("Повторить")}</button>
     </div>
   );
 }

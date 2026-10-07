@@ -66,7 +66,7 @@ export function ConveyorFleet({ vehicles, route, motion, selectedId, onSelect }:
   return <group>
     {PARTS.map(part => <instancedMesh key={`${part}-${capacity}`} ref={mesh => { if (mesh) meshes.current.set(part, mesh); else meshes.current.delete(part); }}
       args={[geometries[part], undefined, capacity]} frustumCulled={false} castShadow={part === 'body' || part === 'tires'} receiveShadow
-      onClick={event => { const id = event.instanceId; if (id !== undefined && vehicles[id]) { event.stopPropagation(); onSelect(vehicles[id].id); } }}>
+      onClick={event => { if (event.delta > 5) return; const id = event.instanceId; if (id !== undefined && vehicles[id]) { event.stopPropagation(); onSelect(vehicles[id].id); } }}>
       <meshPhysicalMaterial color={part === 'body' ? '#ffffff' : part === 'glass' ? '#193c48' : part === 'hubs' ? '#d2dde0' : part === 'headlights' ? '#f1f5db' : part === 'taillights' ? '#b94733' : '#243337'}
         roughness={part === 'tires' ? 0.85 : 0.28} metalness={part === 'body' || part === 'hubs' ? 0.5 : 0.15} clearcoat={part === 'body' ? .65 : 0} />
     </instancedMesh>)}
