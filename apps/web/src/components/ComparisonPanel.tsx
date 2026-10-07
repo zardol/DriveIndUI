@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useState } from 'react';
 import type {
   SessionSnapshot,
@@ -98,20 +99,20 @@ function ComparisonChart({ result }: SvgChartProps) {
   });
 
   const colors: Record<DecisionId, string> = {
-    baseline: '#52605b',
-    maintenance: '#1d6b5e',
-    reserve: '#d97706',
+    baseline: 'var(--ink-2)',
+    maintenance: 'var(--accent)',
+    reserve: 'var(--amber)',
   };
 
   return (
     <div className="cmp-chart-box">
-      <div className="cmp-chart-title">Годный выпуск за смену: три варианта</div>
+      <div className="cmp-chart-title">{t("Годный выпуск за смену: три варианта")}</div>
       <div className="cmp-chart-svg-wrap">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="cmp-chart-svg"
           role="img"
-          aria-label="График выпуска годных автомобилей по сценариям решений"
+          aria-label={t("График выпуска годных автомобилей по сценариям решений")}
         >
           <line
             x1={padLeft}
@@ -128,8 +129,7 @@ function ComparisonChart({ result }: SvgChartProps) {
             className="cmp-chart-plan-line"
           />
           <text x={padLeft + 4} y={planY - 4} className="cmp-chart-plan-text">
-            План: {result.shiftPlan} шт.
-          </text>
+            {t("План: ")}{t(result.shiftPlan)} {t(" шт.")}</text>
 
           <line x1={toX(result.fromSeconds)} x2={toX(result.fromSeconds)} y1={padTop} y2={padTop + chartH} stroke="#aaa" strokeDasharray="3 4" />
 
@@ -146,39 +146,39 @@ function ComparisonChart({ result }: SvgChartProps) {
           ))}
 
           <text x={padLeft} y={height - 10} className="cmp-chart-tick-text" textAnchor="start">
-            {formatClock(tMin, false)}
+            {t(formatClock(tMin, false))}
           </text>
           <text x={padLeft + chartW / 2} y={height - 10} className="cmp-chart-tick-text" textAnchor="middle">
-            {formatClock((tMin + tMax) / 2, false)}
+            {t(formatClock((tMin + tMax) / 2, false))}
           </text>
           <text x={padLeft + chartW} y={height - 10} className="cmp-chart-tick-text" textAnchor="end">
-            {formatClock(tMax, false)}
+            {t(formatClock(tMax, false))}
           </text>
 
           <text x={padLeft - 6} y={padTop + chartH} className="cmp-chart-tick-text" textAnchor="end">
             0
           </text>
           <text x={padLeft - 6} y={padTop + 10} className="cmp-chart-tick-text" textAnchor="end">
-            {yMax}
+            {t(yMax)}
           </text>
         </svg>
       </div>
       <div className="cmp-legend">
         <span className="cmp-legend__item">
           <span className="cmp-legend__dot cmp-legend__dot--baseline" />
-          <span>Продолжить смену</span>
+          <span>{t("Продолжить смену")}</span>
         </span>
         <span className="cmp-legend__item">
           <span className="cmp-legend__dot cmp-legend__dot--maintenance" />
-          <span>Обслужить окраску</span>
+          <span>{t("Обслужить окраску")}</span>
         </span>
         <span className="cmp-legend__item">
           <span className="cmp-legend__dot cmp-legend__dot--reserve" />
-          <span>Резерв мощности</span>
+          <span>{t("Резерв мощности")}</span>
         </span>
         <span className="cmp-legend__item">
           <span className="cmp-legend__dot cmp-legend__dot--plan" />
-          <span>План смены</span>
+          <span>{t("План смены")}</span>
         </span>
       </div>
     </div>
@@ -230,19 +230,16 @@ export function ComparisonPanel({
       <div className="cmp-header">
         <div className="cmp-header__titles">
           <h2 id="cmp-heading" className="cmp-heading">
-            Три варианта одной смены
-          </h2>
+            {t("Три варианта одной смены")}</h2>
           <p className="cmp-subheading">
-            Расчёт не меняет текущую линию.
-          </p>
+            {t("Расчёт не меняет текущую линию.")}</p>
         </div>
       </div>
 
       <div className="cmp-controls">
         <div className="cmp-controls__group">
           <label htmlFor="cmp-maintenance-select" className="cmp-label">
-            Длительность ТО окраски:
-          </label>
+            {t("Длительность ТО окраски:")}</label>
           <select
             id="cmp-maintenance-select"
             className="cmp-select"
@@ -252,17 +249,16 @@ export function ComparisonPanel({
               setMaintenanceMinutes(Number(e.target.value) as ComparisonOptions['maintenanceMinutes'])
             }
           >
-            <option value={5}>5 минут</option>
-            <option value={10}>10 минут (базовое ТО)</option>
-            <option value={15}>15 минут</option>
-            <option value={20}>20 минут</option>
+            <option value={5}>{t("5 минут")}</option>
+            <option value={10}>{t("10 минут (базовое ТО)")}</option>
+            <option value={15}>{t("15 минут")}</option>
+            <option value={20}>{t("20 минут")}</option>
           </select>
         </div>
 
         <div className="cmp-controls__group">
           <label htmlFor="cmp-reserve-select" className="cmp-label">
-            Подготовка резерва сборки:
-          </label>
+            {t("Подготовка резерва сборки:")}</label>
           <select
             id="cmp-reserve-select"
             className="cmp-select"
@@ -272,10 +268,10 @@ export function ComparisonPanel({
               setReserveSetupMinutes(Number(e.target.value) as ComparisonOptions['reserveSetupMinutes'])
             }
           >
-            <option value={0}>0 минут (готов к пуску)</option>
-            <option value={5}>5 минут (переналадка)</option>
-            <option value={10}>10 минут</option>
-            <option value={15}>15 минут</option>
+            <option value={0}>{t("0 минут (готов к пуску)")}</option>
+            <option value={5}>{t("5 минут (переналадка)")}</option>
+            <option value={10}>{t("10 минут")}</option>
+            <option value={15}>{t("15 минут")}</option>
           </select>
         </div>
 
@@ -288,7 +284,7 @@ export function ComparisonPanel({
           {pending ? (
             <>
               <RefreshCw className="cmp-spin" size={15} aria-hidden="true" />
-              <span>Расчёт...</span>
+              <span>{t("Расчёт...")}</span>
             </>
           ) : (
             'Сравнить решения'
@@ -299,7 +295,7 @@ export function ComparisonPanel({
       {pending && (
         <div className="cmp-status cmp-status--pending" aria-live="polite">
           <RefreshCw className="cmp-spin" size={16} aria-hidden="true" />
-          <span>Выполняется расчёт вариантов на основе текущего состояния линии...</span>
+          <span>{t("Выполняется расчёт вариантов на основе текущего состояния линии...")}</span>
         </div>
       )}
 
@@ -307,7 +303,7 @@ export function ComparisonPanel({
         <div className="cmp-status cmp-status--error" role="alert">
           <div className="cmp-status__content">
             <AlertTriangle size={18} aria-hidden="true" />
-            <span>Ошибка расчёта: {error}</span>
+            <span>{t("Ошибка расчёта: ")}{t(error)}</span>
           </div>
           <button
             type="button"
@@ -315,8 +311,7 @@ export function ComparisonPanel({
             onClick={handleCompareClick}
             disabled={isButtonDisabled}
           >
-            Повторить попытку
-          </button>
+            {t("Повторить попытку")}</button>
         </div>
       )}
 
@@ -324,8 +319,7 @@ export function ComparisonPanel({
         <div className="cmp-status cmp-status--info" role="status">
           <Info size={16} aria-hidden="true" />
           <span>
-            Смена завершена ({formatClock(snapshot.shiftSeconds, false)}). Сбросьте смену, чтобы сравнить новые решения.
-          </span>
+            {t("Смена завершена (")}{t(formatClock(snapshot.shiftSeconds, false))}{t("). Сбросьте смену, чтобы сравнить новые решения.")}</span>
         </div>
       )}
 
@@ -333,8 +327,7 @@ export function ComparisonPanel({
         <div className="cmp-status cmp-status--warning" role="status">
           <AlertTriangle size={16} aria-hidden="true" />
           <span>
-            Параметры изменены (выбрано: ТО {maintenanceMinutes} мин, резерв {reserveSetupMinutes} мин). Ниже показан результат предыдущего расчёта ({result.options.maintenanceMinutes} мин / {result.options.reserveSetupMinutes} мин). Нажмите «Сравнить решения» для перерасчёта.
-          </span>
+            {t("Параметры изменены (выбрано: ТО ")}{t(maintenanceMinutes)} {t(" мин, резерв ")}{t(reserveSetupMinutes)} {t(" мин). Ниже показан результат предыдущего расчёта (")}{t(result.options.maintenanceMinutes)} {t(" мин / ")}{t(result.options.reserveSetupMinutes)} {t(" мин). Нажмите «Сравнить решения» для перерасчёта.")}</span>
         </div>
       )}
 
@@ -343,30 +336,30 @@ export function ComparisonPanel({
           <div className="cmp-empty__icon-wrap">
             <Sliders size={26} aria-hidden="true" />
           </div>
-          <h3 className="cmp-empty__title">Оцените действие до его выполнения</h3>
+          <h3 className="cmp-empty__title">{t("Оцените действие до его выполнения")}</h3>
           <p className="cmp-empty__text">
-            Выберите время подготовки и запустите расчёт до {formatClock(snapshot.shiftSeconds, false)}.
+            {t("Выберите время подготовки и запустите расчёт до ")}{t(formatClock(snapshot.shiftSeconds, false))}.
           </p>
-          <div className='decision-preview'><article><b>01 · Продолжить</b><span>Текущий сценарий</span></article><article><b>02 · Обслужить окраску</b><span>Пауза на ТО, устранение дальнейших отказов</span></article><article><b>03 · Резерв сборки</b><span>Подготовка, затем удвоенный темп</span></article></div>
+          <div className='decision-preview'><article><b>{t("01 · Продолжить")}</b><span>{t("Текущий сценарий")}</span></article><article><b>{t("02 · Обслужить окраску")}</b><span>{t("Пауза на ТО, устранение дальнейших отказов")}</span></article><article><b>{t("03 · Резерв сборки")}</b><span>{t("Подготовка, затем удвоенный темп")}</span></article></div>
         </div>
       )}
 
       {result && (
         <div className="cmp-results">
-          {best && <div className='decision-result' role='status'><span>ИТОГ РАСЧЁТА</span><h3>{best.deltaGoodUnits > 0 ? `${DECISION_HEADERS[best.id]}: +${best.deltaGoodUnits} годных авто` : 'Дополнительные действия не повышают выпуск'}</h3><p>{best.deltaGoodUnits > 0 ? `${best.goodUnits} авто к концу смены при выбранных условиях.` : 'В этих условиях продолжение смены даёт не меньший выпуск.'} Сравнение по выпуску; стоимость ресурсов не учтена.</p></div>}
+          {best && <div className='decision-result' role='status'><span>{t("ИТОГ РАСЧЁТА")}</span><h3>{t(best.deltaGoodUnits > 0 ? `${DECISION_HEADERS[best.id]}: +${best.deltaGoodUnits} годных авто` : 'Дополнительные действия не повышают выпуск')}</h3><p>{t(best.deltaGoodUnits > 0 ? `${best.goodUnits} авто к концу смены при выбранных условиях.` : 'В этих условиях продолжение смены даёт не меньший выпуск.')} {t(" Сравнение по выпуску; стоимость ресурсов не учтена.")}</p></div>}
           <div className="cmp-meta">
             <div className="cmp-meta__item">
               <Clock size={14} aria-hidden="true" />
-              <span>Расчёт от: <strong>{formatClock(result.fromSeconds)}</strong></span>
+              <span>{t("Расчёт от: ")}<strong>{t(formatClock(result.fromSeconds))}</strong></span>
             </div>
             <div className="cmp-meta__item">
-              <span>Сценарий: <strong>{scenarioTitle}</strong></span>
+              <span>{t("Сценарий: ")}<strong>{t(scenarioTitle)}</strong></span>
             </div>
             <div className="cmp-meta__item">
-              <span>Горизонт: до <strong>{formatClock(result.toSeconds, false)}</strong></span>
+              <span>{t("Горизонт: до ")}<strong>{t(formatClock(result.toSeconds, false))}</strong></span>
             </div>
             <div className="cmp-meta__item">
-              <span>План смены: <strong>{formatInt(result.shiftPlan)} шт.</strong></span>
+              <span>{t("План смены: ")}<strong>{t(formatInt(result.shiftPlan))} {t(" шт.")}</strong></span>
             </div>
           </div>
 
@@ -396,55 +389,53 @@ export function ComparisonPanel({
                 <div key={alt.id} className={`cmp-card cmp-card--${alt.id}`}>
                   <div className="cmp-card__head">
                     <div>
-                      <span className="cmp-card__badge">{DECISION_BADGES[alt.id]}</span>
-                      <h3 className="cmp-card__title">{DECISION_HEADERS[alt.id]}</h3>
+                      <span className="cmp-card__badge">{t(DECISION_BADGES[alt.id])}</span>
+                      <h3 className="cmp-card__title">{t(DECISION_HEADERS[alt.id])}</h3>
                     </div>
                   </div>
 
-                  <details className='decision-detail'><summary>По моделям и условиям</summary><p className="cmp-card__desc">{alt.description}</p>
+                  <details className='decision-detail'><summary>{t("По моделям и условиям")}</summary><p className="cmp-card__desc">{t(alt.description)}</p>
                   {alt.products && <div className='cmp-products'>
-                    {alt.products.map(product => <p key={product.id}><span>{PRODUCT_MODELS.find(model => model.id === product.id)?.name}</span><strong>{product.goodUnits} / {product.plannedUnits}</strong></p>)}
-                    <small>Годные к заказу модели за выбранную смену</small>
+                    {alt.products.map(product => <p key={product.id}><span>{t(PRODUCT_MODELS.find(model => model.id === product.id)?.name)}</span><strong>{t(product.goodUnits)} / {t(product.plannedUnits)}</strong></p>)}
+                    <small>{t("Годные к заказу модели за выбранную смену")}</small>
                   </div>}
                   {snapshot.config.productionPlan && <p className='cmp-month-projection'>
-                    Повторение такой смены весь месяц: <strong>{formatInt(alt.goodUnits * summarizePlan(snapshot.config.productionPlan).shifts)} авто</strong>.
-                    {' '}Грубая экстраполяция, не прогноз; квоты смен и перенос НЗП могут отличаться.
-                  </p>}</details>
+                    {t("Повторение такой смены весь месяц: ")}<strong>{t(formatInt(alt.goodUnits * summarizePlan(snapshot.config.productionPlan).shifts))} {t(" авто")}</strong>.
+                    {t(' ')}{t("Грубая экстраполяция, не прогноз; квоты смен и перенос НЗП могут отличаться.")}</p>}</details>
 
                   <div className="cmp-card__metrics">
                     <div className="cmp-metric">
-                      <span className="cmp-metric__label">Годная продукция:</span>
+                      <span className="cmp-metric__label">{t("Годная продукция:")}</span>
                       <div className="cmp-metric__values">
-                        <strong className="cmp-metric__main">{formatInt(alt.goodUnits)} шт.</strong>
+                        <strong className="cmp-metric__main">{t(formatInt(alt.goodUnits))} {t(" шт.")}</strong>
                         <span className={`cmp-delta ${goodUnitsDeltaClass}`}>
-                          {isBase ? '— (база)' : `${formatSigned(alt.deltaGoodUnits)} шт.`}
+                          {t(isBase ? '— (база)' : `${formatSigned(alt.deltaGoodUnits)} шт.`)}
                         </span>
                       </div>
                     </div>
 
                     <div className="cmp-metric">
-                      <span className="cmp-metric__label">Отклонение от плана ({result.shiftPlan} шт.):</span>
+                      <span className="cmp-metric__label">{t("Отклонение от плана (")}{t(result.shiftPlan)} {t(" шт.):")}</span>
                       <div className="cmp-metric__values">
                         <span className={`cmp-metric__main ${planGapClass}`}>
-                          {formatSigned(alt.planGap)} шт.
-                        </span>
+                          {t(formatSigned(alt.planGap))} {t(" шт.")}</span>
                       </div>
                     </div>
 
                     <div className="cmp-metric">
-                      <span className="cmp-metric__label">Простой оборудования:</span>
+                      <span className="cmp-metric__label">{t("Простой оборудования:")}</span>
                       <div className="cmp-metric__values">
-                        <strong className="cmp-metric__main">{formatInt(downtimeMins)} мин</strong>
+                        <strong className="cmp-metric__main">{t(formatInt(downtimeMins))} {t(" мин")}</strong>
                         <span className={`cmp-delta ${downtimeDeltaClass}`}>
-                          {isBase ? '— (база)' : `${formatSigned(deltaDowntimeMins)} мин`}
+                          {t(isBase ? '— (база)' : `${formatSigned(deltaDowntimeMins)} мин`)}
                         </span>
                       </div>
                     </div>
 
                     <div className="cmp-metric">
-                      <span className="cmp-metric__label">Остаток в линии (WIP):</span>
+                      <span className="cmp-metric__label">{t("Остаток в линии (WIP):")}</span>
                       <div className="cmp-metric__values">
-                        <strong className="cmp-metric__main">{formatInt(alt.wip)} шт.</strong>
+                        <strong className="cmp-metric__main">{t(formatInt(alt.wip))} {t(" шт.")}</strong>
                       </div>
                     </div>
                   </div>
@@ -455,21 +446,20 @@ export function ComparisonPanel({
 
           <ComparisonChart result={result} />
 
-          <p className="cmp-disclosure__note">Разница — относительно продолжения смены. Пунктир отмечает начало сравнения.</p>
+          <p className="cmp-disclosure__note">{t("Разница — относительно продолжения смены. Пунктир отмечает начало сравнения.")}</p>
 
           <details className="cmp-disclosure">
             <summary className="cmp-disclosure__summary">
-              <span>Допущения модели и синтетические условия ({result.assumptions.length})</span>
+              <span>{t("Допущения модели и синтетические условия (")}{t(result.assumptions.length)})</span>
               <ChevronDown size={15} className="cmp-disclosure__chevron" aria-hidden="true" />
             </summary>
             <div className="cmp-disclosure__body">
               <p className="cmp-disclosure__note">
-                Результат зависит от следующих условий учебной модели:
-              </p>
+                {t("Результат зависит от следующих условий учебной модели:")}</p>
               <ul className="cmp-disclosure__list">
                 {result.assumptions.map((assumption, idx) => (
                   <li key={idx} className="cmp-disclosure__item">
-                    {assumption}
+                    {t(assumption)}
                   </li>
                 ))}
               </ul>

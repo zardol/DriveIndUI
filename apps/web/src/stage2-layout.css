@@ -33,14 +33,14 @@
 .stage2 .timeline__item { grid-template-columns: 65px 16px minmax(0, 1fr); }
 .stage2 .timeline__title { font-size: 13px; }
 .stage2 .timeline__desc, .stage2 .timeline__meta { font-size: 12px; }
-.shift-focus { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 18px; border: 1px solid #c9ded7; background: #eaf2ed; border-radius: 12px; color: #245d50; }
-.shift-focus--alert { color: #7d5314; background: #fcf1d9; border-color: #e7ce9b; }
+.shift-focus { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 18px; border: 1px solid light-dark(#c9ded7, #3c5142); background: light-dark(#eaf2ed, #21352c); border-radius: 12px; color: light-dark(#245d50, #a0d8b1); }
+.shift-focus--alert { color: light-dark(#7d5314, #edaa95); background: light-dark(#fcf1d9, #284133); border-color: light-dark(#e7ce9b, #816936); }
 .shift-focus__lead { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .shift-focus__lead > div { display: grid; gap: 2px; }
 .shift-focus__lead strong { font-size: 13px; }
 .shift-focus__caption { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; }
 .queue-focus { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; border: 1px solid currentColor; background: transparent; color: inherit; font-size: 12px; cursor: pointer; }
-.queue-focus:hover { background: #ffffff80; }
+.queue-focus:hover { background: light-dark(#ffffff80, #1b2b2580); }
 .queue-focus strong { font-family: var(--mono); white-space: nowrap; }
 .station-disclosure { border-top: 1px solid var(--line); }
 .station-disclosure > summary, .legend-disclosure > summary { padding: 10px 20px; font-weight: 600; font-size: 13px; cursor: pointer; color: var(--ink-2); }

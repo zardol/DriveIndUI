@@ -1,20 +1,20 @@
+import { t } from '../i18n';
 import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import { Vector3, type PerspectiveCamera } from 'three';
-import type { OrbitControls as OrbitControlsType } from 'three-stdlib';
+import { Vector3 } from 'three';
 import type { SessionSnapshot, StationId, StationSnapshot, StationStatus } from '@driveindui/shared';
 import { EquipmentModel } from './EquipmentModel';
 import { stationCanAnimate, type FactoryLayout, type LayoutStation } from './factoryLayout';
-import { buildConveyorRoute, sampleConveyor, type ConveyorRoute } from './conveyorPath';
+import { buildConveyorRoute } from './conveyorPath';
 import { ConveyorBelt } from './ConveyorBelt';
 import { ConveyorFleet } from './ConveyorFleet';
 import { ConveyorMotion } from './conveyorMotion';
 import { STATUS_META } from '../status';
 import { FactoryScenery } from './FactoryScenery';
+import { CameraRig, type CameraRequest } from './CameraRig';
+import { usePreferences } from '../preferences';
 
-export type CameraView = 'overview' | 'top' | 'station' | 'vehicle';
-export interface CameraRequest { view: CameraView; sequence: number; station: StationId; vehicleId?: string }
+export type { CameraRequest, CameraView } from './CameraRig';
 export interface FactoryCanvasProps {
   snapshot: SessionSnapshot;
   selected: StationId;
@@ -34,61 +34,6 @@ const COLORS: Record<StationStatus, string> = {
   running: '#239982', idle: '#829497', warning: '#edb34f', blocked: '#d28a3a', stopped: '#e05044',
 };
 
-function CameraRig({ request, layout, route, motion }: { request: CameraRequest; layout: FactoryLayout; route: ConveyorRoute; motion: ConveyorMotion }) {
-  const controls = useRef<OrbitControlsType>(null);
-  const { camera, size, invalidate } = useThree();
-  useEffect(() => {
-    const orbit = controls.current;
-    if (!orbit) return;
-    const target = new Vector3(0, 0, 0);
-    const offset = new Vector3(0.35, 1.05, 1.25).normalize();
-    const aspect = size.width / Math.max(1, size.height);
-    const { width, depth } = layout.floor;
-    // Fit all corners in camera space, including perspective depth near the camera.
-    // A flat width/height estimate clips the outlet on wide, short viewports.
-    const right = new Vector3(offset.z, 0, -offset.x).normalize();
-    const up = new Vector3().crossVectors(offset, right).normalize();
-    const tanFov = Math.tan((camera as PerspectiveCamera).fov * Math.PI / 360);
-    let distance = 0;
-    for (const x of [-width / 2, width / 2]) for (const z of [-depth / 2, depth / 2]) for (const y of [0, 6]) {
-      const corner = new Vector3(x, y, z);
-      const towardCamera = corner.dot(offset);
-      distance = Math.max(distance, towardCamera + Math.abs(corner.dot(up)) / tanFov,
-        towardCamera + Math.abs(corner.dot(right)) / (tanFov * aspect));
-    }
-    distance *= 1.08;
-    if (request.view === 'station') {
-      const station = layout.stations.find(item => item.id === request.station)!;
-      target.set(station.position[0], 1, station.position[1]);
-      distance = Math.max(16, 14 / Math.max(0.45, aspect));
-    } else if (request.view === 'vehicle' && request.vehicleId) {
-      const pose = sampleConveyor(route, motion.distance(request.vehicleId, performance.now()) ?? 0);
-      target.set(pose.x, 0.8, pose.z);
-      distance = Math.max(14, 13 / Math.max(0.45, aspect));
-    } else if (request.view === 'top') {
-      offset.set(0, 1, 0.001).normalize();
-      distance = Math.max(layout.floor.depth * 1.4, layout.floor.width / Math.max(0.45, aspect) * 1.4);
-    }
-    camera.position.copy(target).addScaledVector(offset, distance);
-    (camera as PerspectiveCamera).zoom = 1;
-    camera.updateProjectionMatrix();
-    orbit.target.copy(target);
-    orbit.update();
-    invalidate();
-  }, [request, layout, route, motion, size.width, size.height, camera, invalidate]);
-  useFrame(() => {
-    const orbit = controls.current;
-    if (!orbit || request.view !== 'vehicle' || !request.vehicleId) return;
-    const distance = motion.distance(request.vehicleId, performance.now());
-    if (distance === undefined) return;
-    const pose = sampleConveyor(route, distance);
-    camera.position.x += pose.x - orbit.target.x;
-    camera.position.z += pose.z - orbit.target.z;
-    orbit.target.set(pose.x, 0.8, pose.z);
-    orbit.update();
-  });
-  return <OrbitControls ref={controls} makeDefault enableDamping={false} minDistance={6} maxDistance={400} maxPolarAngle={Math.PI / 2.15} enablePan screenSpacePanning />;
-}
 
 function ContextGuard({ onFailure }: { onFailure: () => void }) {
   const canvas = useThree(state => state.gl.domElement);
@@ -118,7 +63,7 @@ function Station({ placement, station, selected, animate, reducedMotion, onSelec
 }) {
   const color = COLORS[station.status];
   return <group position={[placement.position[0], 0, placement.position[1]]}>
-    <group rotation={[0, placement.rotation * Math.PI / 180, 0]} onClick={event => { event.stopPropagation(); onSelect(station.id); }}>
+    <group rotation={[0, placement.rotation * Math.PI / 180, 0]} onClick={event => { if (event.delta > 5) return; event.stopPropagation(); onSelect(station.id); }}>
       <mesh position={[0, -0.02, 0]} receiveShadow><boxGeometry args={[7.8, 0.14, 5.8]} /><meshStandardMaterial color={selected ? '#9fcbc0' : '#c4d7d4'} roughness={0.85} /></mesh>
       <mesh position={[0, 0.08, 2.8]}><boxGeometry args={[7.7, 0.09, 0.13]} /><meshStandardMaterial color={selected ? '#186e61' : color} /></mesh>
       <EquipmentModel station={station} animate={stationCanAnimate(station, animate, reducedMotion)} selected={selected} />
@@ -179,6 +124,7 @@ function LabelProjection({ anchors, labels }: { anchors: LabelAnchor[]; labels: 
 
 export default function FactoryCanvas(props: FactoryCanvasProps) {
   const { layout, snapshot, selected, onSelect, animate, reducedMotion, renderActive, quality, cameraRequest, onFailure, selectedVehicleId, onSelectVehicle } = props;
+  const { theme } = usePreferences();
   const route = useMemo(() => buildConveyorRoute(layout), [layout]);
   const motion = useMemo(() => new ConveyorMotion(), []);
   useLayoutEffect(() => {
@@ -191,9 +137,9 @@ export default function FactoryCanvas(props: FactoryCanvasProps) {
     { id: 'finished', position: [layout.terminals.finished[0], 2.5, layout.terminals.finished[1]] },
   ], [layout]);
   return <><Canvas shadows={quality === 'balanced' ? 'percentage' : false} dpr={quality === 'balanced' ? [1, 1.5] : 1}
-    frameloop={!renderActive ? 'never' : animate && !reducedMotion ? 'always' : 'demand'} camera={{ position: [35, 35, 45], fov: 42, near: 0.1, far: 600 }}
-    gl={{ antialias: true, powerPreference: 'default' }} fallback={<span>Для 3D требуется поддержка WebGL. Доступна 2D-схема.</span>}>
-    <color attach='background' args={['#d8e3e2']} />
+    frameloop={!renderActive ? 'never' : animate && !reducedMotion ? 'always' : 'demand'} camera={{ position: [35, 35, 45], fov: 42, near: 0.1, far: 2000 }}
+    gl={{ antialias: true, powerPreference: 'default' }} fallback={<span>{t("Для 3D требуется поддержка WebGL. Доступна 2D-схема.")}</span>}>
+    <color attach='background' args={[theme === 'dark' ? '#172c29' : '#d8e3e2']} />
     <ambientLight intensity={0.65} />
     <hemisphereLight args={['#ffffff', '#698879', 1.5]} />
     <directionalLight position={[5, 60, 24]} intensity={2.2} castShadow={quality === 'balanced'} shadow-mapSize={[2048, 2048]}
@@ -202,7 +148,7 @@ export default function FactoryCanvas(props: FactoryCanvasProps) {
     <ContextGuard onFailure={onFailure} />
     <FrameMetrics />
     <LabelProjection anchors={anchors} labels={labels} />
-    <CameraRig request={cameraRequest} layout={layout} route={route} motion={motion} />
+    <CameraRig request={cameraRequest} layout={layout} route={route} motion={motion} reducedMotion={reducedMotion} />
     <FactoryFloor layout={layout} />
     <FactoryScenery layout={layout} />
     <ConveyorBelt route={route} vehicles={snapshot.conveyor.vehicles} animate={animate && !reducedMotion} speed={snapshot.speed * snapshot.conveyor.nominalSpeed / 0.5} />
@@ -218,10 +164,10 @@ export default function FactoryCanvas(props: FactoryCanvasProps) {
       const station = snapshot.stations.find(item => item.id === anchor.id);
       return <div className='plant-label-anchor' key={anchor.id} ref={element => { if (element) labels.current.set(anchor.id, element); else labels.current.delete(anchor.id); }}>
         {station ? <button className={`plant-label${selected === station.id ? ' is-selected' : ''}`} type='button' onClick={() => onSelect(station.id)} aria-pressed={selected === station.id}>
-          <span><i style={{ background: COLORS[station.status] }} />{station.name}</span>
-          <small>{STATUS_META[station.status].short} · буфер {station.inputQueue}/{station.bufferCapacity}</small>
-          <small>{station.id === 'welding' ? 'ABB-01 / ABB-04' : station.id === 'painting' ? 'Камера-02' : station.id === 'assembly' ? 'Конвейер-03' : 'ОТК · условный пост'}</small>
-        </button> : <div className='plant-terminal'>{anchor.id === 'supply' ? 'Склад комплектующих' : 'Склад готовой продукции'}<small>{anchor.id === 'supply' ? `Подано: ${snapshot.introducedUnits}` : `${snapshot.goodUnits} годных · ${snapshot.rejectedUnits} брак`}</small></div>}
+          <span><i style={{ background: COLORS[station.status] }} />{t(station.name)}</span>
+          <small>{t(STATUS_META[station.status].short)} {t(" · буфер ")}{t(station.inputQueue)}/{t(station.bufferCapacity)}</small>
+          <small>{t(station.id === 'welding' ? 'ABB-01 / ABB-04' : station.id === 'painting' ? 'Камера-02' : station.id === 'assembly' ? 'Конвейер-03' : 'ОТК · условный пост')}</small>
+        </button> : <div className='plant-terminal'>{t(anchor.id === 'supply' ? 'Склад комплектующих' : 'Склад готовой продукции')}<small>{t(anchor.id === 'supply' ? `Подано: ${snapshot.introducedUnits}` : `${snapshot.goodUnits} годных · ${snapshot.rejectedUnits} брак`)}</small></div>}
       </div>;
     })}
   </div></>;

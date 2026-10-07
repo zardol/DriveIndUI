@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { clamp01, clampPercent, formatDuration, formatInt, formatOne } from '../format';
 import { SEVERITY_LABEL, STATUS_META } from '../status';
 import { STATIONS } from '../types';
@@ -22,8 +23,8 @@ interface MetricProps {
 function Metric({ label, value, note, progress, tone = 'default' }: MetricProps) {
   return (
     <div className='metric'>
-      <dt className='metric__label'>{label}</dt>
-      <dd className='metric__value'>{value}</dd>
+      <dt className='metric__label'>{t(label)}</dt>
+      <dd className='metric__value'>{t(value)}</dd>
       {progress !== undefined && (
         <div className='bar bar--thin' aria-hidden='true'>
           <div
@@ -32,7 +33,7 @@ function Metric({ label, value, note, progress, tone = 'default' }: MetricProps)
           />
         </div>
       )}
-      {note && <p className='metric__note'>{note}</p>}
+      {note && <p className='metric__note'>{t(note)}</p>}
     </div>
   );
 }
@@ -53,7 +54,7 @@ export function StationDetails({ snapshot, selected, onSelect }: StationDetailsP
   return (
     <div className='details' aria-labelledby='station-title' role='region'>
       <div className='details__main'>
-        <div className='chips' role='group' aria-label='Выбор станции'>
+        <div className='chips' role='group' aria-label={t("Выбор станции")}>
           {snapshot.stations.map((item) => (
             <button
               key={item.id}
@@ -63,34 +64,34 @@ export function StationDetails({ snapshot, selected, onSelect }: StationDetailsP
               onClick={() => onSelect(item.id)}
             >
               <StatusGlyph status={item.status} size={14} />
-              <span>{item.name}</span>
+              <span>{t(item.name)}</span>
             </button>
           ))}
         </div>
 
         <h3 id='station-title' className='details__title'>
-          {station.name}
+          {t(station.name)}
         </h3>
-        {definition && <p className='details__desc'>{definition.description}</p>}
+        {definition && <p className='details__desc'>{t(definition.description)}</p>}
         <p className='details__status'>
           <StatusBadge status={station.status} />
         </p>
-        <p className='details__hint'>{meta.hint}</p>
+        <p className='details__hint'>{t(meta.hint)}</p>
 
         <div className='details__incidents'>
-          <h4 className='details__subtitle'>Активные инциденты</h4>
+          <h4 className='details__subtitle'>{t("Активные инциденты")}</h4>
           {openIncidents.length === 0 ? (
-            <p className='muted'>Активных инцидентов по станции нет.</p>
+            <p className='muted'>{t("Активных инцидентов по станции нет.")}</p>
           ) : (
             <ul className='mini-list'>
               {openIncidents.map((item) => (
                 <li key={item.id}>
                   <span className={`sev sev--${item.severity}`}>
                     <StatusGlyph status={item.severity === 'critical' ? 'stopped' : 'warning'} size={13} />
-                    {SEVERITY_LABEL[item.severity]}
+                    {t(SEVERITY_LABEL[item.severity])}
                   </span>
-                  <strong>{item.title}</strong>
-                  <span className='muted'>{item.description}</span>
+                  <strong>{t(item.title)}</strong>
+                  <span className='muted'>{t(item.description)}</span>
                 </li>
               ))}
             </ul>
@@ -100,36 +101,36 @@ export function StationDetails({ snapshot, selected, onSelect }: StationDetailsP
 
       <dl className='metrics'>
         <Metric
-          label='Прогресс цикла'
+          label={t("Прогресс цикла")}
           value={station.inProcess ? `${Math.round(clamp01(station.progress) * 100)}%` : '—'}
           progress={station.inProcess ? station.progress : 0}
           note={station.inProcess ? `Цикл ${formatDuration(station.cycleSeconds)}` : 'Нет изделия в обработке'}
         />
         <Metric
-          label='Входной буфер'
+          label={t("Входной буфер")}
           value={`${formatInt(station.inputQueue)} из ${formatInt(capacity)}`}
           progress={station.inputQueue / capacity}
           tone={queueFull ? 'warn' : 'default'}
           note={`${station.queuedUnits} ожидают · ${station.arrivingUnits} подъезжают${queueFull ? ' · буфер заполнен' : ''}`}
         />
         <Metric
-          label='Загрузка'
+          label={t("Загрузка")}
           value={`${Math.round(clampPercent(station.utilizationPercent))}%`}
           progress={clampPercent(station.utilizationPercent) / 100}
-          note='Доля времени в работе с начала смены'
+          note={t("Доля времени в работе с начала смены")}
         />
-        <Metric label='Выпущено станцией' value={`${formatInt(station.completed)} ед.`} />
-        <Metric label='Текущий темп' value={`${formatOne(station.throughputPerHour)} ед./ч`} />
+        <Metric label={t("Выпущено станцией")} value={`${formatInt(station.completed)} ед.`} />
+        <Metric label={t("Текущий темп")} value={`${formatOne(station.throughputPerHour)} ед./ч`} />
         <Metric
-          label='Мощность по текущему циклу'
+          label={t("Мощность по текущему циклу")}
           value={nominal === null ? '—' : `${formatOne(nominal)} ед./ч`}
-          note='Без учёта ожидания и блокировок'
+          note={t("Без учёта ожидания и блокировок")}
         />
         <Metric
-          label='Простой оборудования'
+          label={t("Простой оборудования")}
           value={formatDuration(station.downtimeSeconds)}
           tone={station.downtimeSeconds > 0 ? 'warn' : 'default'}
-          note='Только остановки оборудования'
+          note={t("Только остановки оборудования")}
         />
       </dl>
     </div>

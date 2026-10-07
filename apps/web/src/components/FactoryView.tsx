@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Box, Map, Maximize2, RotateCcw, Upload, Download, Focus } from 'lucide-react';
 import { STATIONS, PRODUCT_MODELS, type ConveyorVehicleSnapshot, type SessionSnapshot, type StationId } from '@driveindui/shared';
@@ -33,6 +34,7 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
   const [foreground, setForeground] = useState(!document.hidden);
   const [wide, setWide] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const lastStationFocus = useRef(0);
   const [cameraRequest, setCameraRequest] = useState<CameraRequest>({ view: 'overview', sequence: 0, station: selected });
   const viewport = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -51,7 +53,8 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
   }, [snapshot.sessionId, snapshot.revision]);
 
   useEffect(() => {
-    if (stationFocus > 0) setCameraRequest(previous => ({ view: 'station', station: selected, sequence: previous.sequence + 1 }));
+    if (stationFocus !== lastStationFocus.current) setCameraRequest(previous => ({ view: 'station', station: selected, sequence: previous.sequence + 1 }));
+    lastStationFocus.current = stationFocus;
   }, [stationFocus, selected]);
 
   useEffect(() => {
@@ -106,77 +109,77 @@ export function FactoryView({ snapshot, selected, animate, stale, onSelect, onTo
 
   return <div className={`plant-view${wide ? ' is-expanded' : ''}`}>
     <div className='plant-toolbar'>
-      <div className='plant-switch' role='group' aria-label='Вид производственной линии'>
-        <button type='button' aria-pressed={mode === '3d'} disabled={failed} onClick={() => setMode('3d')}><Box size={16} />3D-цех</button>
-        <button type='button' aria-pressed={mode === '2d'} onClick={() => { setMode('2d'); setWide(false); }}><Map size={16} />2D-схема</button>
+      <div className='plant-switch' role='group' aria-label={t("Вид производственной линии")}>
+        <button type='button' aria-pressed={mode === '3d'} disabled={failed} onClick={() => setMode('3d')}><Box size={16} />{t("3D-цех")}</button>
+        <button type='button' aria-pressed={mode === '2d'} onClick={() => { setMode('2d'); setWide(false); }}><Map size={16} />{t("2D-схема")}</button>
       </div>
-      {mode === '3d' && <div className='plant-camera' role='group' aria-label='Камера'>
-        {wide && <button type='button' disabled={controlsDisabled || snapshot.elapsedSeconds >= snapshot.shiftSeconds} onClick={onTogglePlayback}>{animate ? 'Приостановить смену' : 'Продолжить смену'}</button>}
-        <button type='button' onClick={() => camera('overview')}><RotateCcw size={14} />Общий вид</button>
-        <button type='button' onClick={() => camera('top')}>Сверху</button>
-        <button type='button' onClick={() => camera('station')}><Focus size={14} />К участку</button>
-        <button type='button' disabled={vehicles.length === 0} aria-pressed={cameraRequest.view === 'vehicle'} onClick={() => chooseVehicle(selectedVehicle?.id ?? vehicles[0].id)}>Следить за машиной</button>
-        <button type='button' aria-pressed={wide} onClick={() => setWide(!wide)}><Maximize2 size={14} />{wide ? 'Свернуть' : 'Развернуть'}</button>
+      {mode === '3d' && <div className='plant-camera' role='group' aria-label={t("Камера")}>
+        {wide && <button type='button' disabled={controlsDisabled || snapshot.elapsedSeconds >= snapshot.shiftSeconds} onClick={onTogglePlayback}>{t(animate ? 'Приостановить смену' : 'Продолжить смену')}</button>}
+        <button type='button' onClick={() => camera('overview')}><RotateCcw size={14} />{t("Общий вид")}</button>
+        <button type='button' onClick={() => camera('top')}>{t("Сверху")}</button>
+        <button type='button' onClick={() => camera('station')}><Focus size={14} />{t("К участку")}</button>
+        <button type='button' disabled={vehicles.length === 0} aria-pressed={cameraRequest.view === 'vehicle'} onClick={() => chooseVehicle(selectedVehicle?.id ?? vehicles[0].id)}>{t("Следить за машиной")}</button>
+        <button type='button' aria-pressed={wide} onClick={() => setWide(!wide)}><Maximize2 size={14} />{t(wide ? 'Свернуть' : 'Развернуть')}</button>
       </div>}
     </div>
-    {failed && <p className='plant-notice' role='status'>3D недоступно на этом устройстве. Открыта 2D-схема; расчёты и управление доступны.</p>}
-    <div className='plant-fleet-stats' aria-label='Машины на конвейере'>
-      <strong>В линии <b>{vehicles.length}</b></strong><span>В пути {movingCount}</span><span>На обработке {workingCount}</span><span>Ожидают {waitingCount}</span>
+    {failed && <p className='plant-notice' role='status'>{t("3D недоступно на этом устройстве. Открыта 2D-схема; расчёты и управление доступны.")}</p>}
+    <div className='plant-fleet-stats' aria-label={t("Машины на конвейере")}>
+      <strong>{t("В линии ")}<b>{t(vehicles.length)}</b></strong><span>{t("В пути ")}{t(movingCount)}</span><span>{t("На обработке ")}{t(workingCount)}</span><span>{t("Ожидают ")}{t(waitingCount)}</span>
     </div>
-    <div ref={viewport} className={mode === '3d' ? 'plant-viewport' : 'plant-flat'} aria-label={mode === '3d' ? 'Интерактивный трёхмерный цех' : 'Двумерная схема'} role='region'>
+    <div ref={viewport} className={mode === '3d' ? 'plant-viewport' : 'plant-flat'} aria-label={t(mode === '3d' ? 'Интерактивный трёхмерный цех' : 'Двумерная схема')} role='region'>
       {mode === '3d' ? <SceneBoundary onFailure={reportFailure} fallback={flat}>
-        <Suspense fallback={<div className='plant-loading' role='status'><Box size={32} /><strong>Собираем трёхмерный цех…</strong><span>Готовим оборудование и камеру</span></div>}>
+        <Suspense fallback={<div className='plant-loading' role='status'><Box size={32} /><strong>{t("Собираем трёхмерный цех…")}</strong><span>{t("Готовим оборудование и камеру")}</span></div>}>
           <FactoryCanvas snapshot={snapshot} selected={selected} onSelect={choose} layout={layout} quality={quality}
             animate={animate && !stale} reducedMotion={reducedMotion} renderActive={active && (wide || visible) && foreground}
             cameraRequest={cameraRequest} onFailure={reportFailure} selectedVehicleId={selectedVehicleId} onSelectVehicle={chooseVehicle} />
         </Suspense>
       </SceneBoundary> : flat}
-      {mode === '3d' && <div className='plant-overlay' aria-hidden='true'><span>ЦЕХ / {snapshot.scenario === 'normal' ? 'ШТАТНЫЙ РЕЖИМ' : 'СЦЕНАРИЙ'}</span><strong>{stale ? 'Нет связи' : snapshot.elapsedSeconds >= snapshot.shiftSeconds ? 'Смена завершена' : animate ? 'Смена идёт' : 'Смена на паузе'}</strong><small>{layout.units === 'meters' ? 'Размеры из загруженной схемы' : 'Условные размеры'}</small></div>}
+      {mode === '3d' && <div className='plant-overlay' aria-hidden='true'><span>{t("ЦЕХ / ")}{t(snapshot.scenario === 'normal' ? 'ШТАТНЫЙ РЕЖИМ' : 'СЦЕНАРИЙ')}</span><strong>{t(stale ? 'Нет связи' : snapshot.elapsedSeconds >= snapshot.shiftSeconds ? 'Смена завершена' : animate ? 'Смена идёт' : 'Смена на паузе')}</strong><small>{t(layout.units === 'meters' ? 'Размеры из загруженной схемы' : 'Условные размеры')}</small></div>}
       {mode === '3d' && selectedVehicleId && <div className='plant-vehicle-card' role='status'>
-        <strong>{selectedVehicleId}</strong>
-        {selectedVehicle?.modelId && <b>{PRODUCT_MODELS.find(model => model.id === selectedVehicle.modelId)?.name}</b>}
-        <span>{selectedVehicle ? `${stageName(selectedVehicle)} · ${VEHICLE_STATE[selectedVehicle.state]}` : 'Автомобиль покинул линию'}</span>
-        {selectedVehicle?.outcome === 'rejected' && <small>Отмечен брак · следует к выходу</small>}
+        <strong>{t(selectedVehicleId)}</strong>
+        {selectedVehicle?.modelId && <b>{t(PRODUCT_MODELS.find(model => model.id === selectedVehicle.modelId)?.name)}</b>}
+        <span>{t(selectedVehicle ? `${stageName(selectedVehicle)} · ${VEHICLE_STATE[selectedVehicle.state]}` : 'Автомобиль покинул линию')}</span>
+        {selectedVehicle?.outcome === 'rejected' && <small>{t("Отмечен брак · следует к выходу")}</small>}
       </div>}
-      {mode === '3d' && snapshot.config.productionPlan && <div className='plant-model-key' aria-label='Цвета моделей после окраски'>
-        {PRODUCT_MODELS.map(model => <span key={model.id}><i style={{ background: model.color }} />{model.name}</span>)}
+      {mode === '3d' && snapshot.config.productionPlan && <div className='plant-model-key' aria-label={t("Цвета моделей после окраски")}>
+        {PRODUCT_MODELS.map(model => <span key={model.id}><i style={{ background: model.color }} />{t(model.name)}</span>)}
       </div>}
     </div>
     {mode === '3d' && <>
       <div className='plant-bottom'>
-        <p>Вращение — перетаскивание · масштаб — колесо</p>
-        <label>Графика <select aria-label='Качество 3D' value={quality} onChange={event => setQuality(event.target.value as 'balanced' | 'economy')}><option value='balanced'>Стандартная</option><option value='economy'>Экономная</option></select></label>
+        <p>{t("Перетаскивание — вращение · правая кнопка — перемещение · колесо — масштаб")}</p>
+        <label>{t("Графика ")}<select aria-label={t("Качество 3D")} value={quality} onChange={event => setQuality(event.target.value as 'balanced' | 'economy')}><option value='balanced'>{t("Стандартная")}</option><option value='economy'>{t("Экономная")}</option></select></label>
       </div>
-      <div className='plant-stations' role='group' aria-label='Выбрать участок в 3D'>
+      <div className='plant-stations' role='group' aria-label={t("Выбрать участок в 3D")}>
         {snapshot.stations.map((station, index) => <button key={station.id} type='button' aria-pressed={selected === station.id} onClick={() => choose(station.id)}>
-          <span className={`plant-station-dot is-${station.status}`} /><span><strong>{index + 1}. {station.name}</strong><small>Буфер {station.inputQueue}/{station.bufferCapacity} · ждут {station.queuedUnits}</small></span>
-          <b>{station.inProcess ? `${Math.round(station.progress * 100)}%` : '—'}</b>
+          <span className={`plant-station-dot is-${station.status}`} /><span><strong>{t(index + 1)}. {t(station.name)}</strong><small>{t("Буфер ")}{t(station.inputQueue)}/{t(station.bufferCapacity)} {t(" · ждут ")}{t(station.queuedUnits)}</small></span>
+          <b>{t(station.inProcess ? `${Math.round(station.progress * 100)}%` : '—')}</b>
         </button>)}
       </div>
-      {reducedMotion && <p className='plant-notice'>Анимация отключена согласно настройкам устройства. Показатели продолжают обновляться.</p>}
+      {reducedMotion && <p className='plant-notice'>{t("Анимация отключена согласно настройкам устройства. Показатели продолжают обновляться.")}</p>}
     </>}
     <details className='plant-manifest'>
-      <summary>Автомобили по ID · {vehicles.length}</summary>
-      <p>Выберите машину для наблюдения. Входной буфер включает подъезжающие машины и остановившуюся очередь.</p>
+      <summary>{t("Автомобили по ID · ")}{t(vehicles.length)}</summary>
+      <p>{t("Выберите машину для наблюдения. Входной буфер включает подъезжающие машины и остановившуюся очередь.")}</p>
       <div className='plant-vehicle-list'>
         {vehicles.map(vehicle => <button key={vehicle.id} type='button' aria-pressed={selectedVehicleId === vehicle.id}
           data-vehicle-id={vehicle.id} data-distance={vehicle.distance} data-state={vehicle.state} disabled={mode !== '3d'} onClick={() => chooseVehicle(vehicle.id)}>
-          <strong>{vehicle.id}</strong><span>{PRODUCT_MODELS.find(model => model.id === vehicle.modelId)?.name ?? stageName(vehicle)}</span><small>{stageName(vehicle)} · {VEHICLE_STATE[vehicle.state]}</small>
+          <strong>{t(vehicle.id)}</strong><span>{t(PRODUCT_MODELS.find(model => model.id === vehicle.modelId)?.name ?? stageName(vehicle))}</span><small>{t(stageName(vehicle))} · {t(VEHICLE_STATE[vehicle.state])}</small>
         </button>)}
-        {vehicles.length === 0 && <p>На конвейере нет автомобилей.</p>}
+        {vehicles.length === 0 && <p>{t("На конвейере нет автомобилей.")}</p>}
       </div>
     </details>
     <details className='plant-layout'>
-      <summary>Настроить размещение участков</summary>
-      <p>Можно загрузить расположение четырёх участков по шаблону. Файл читается на этом устройстве и меняет только 3D-размещение. Показатели рассчитывает модель; обновление страницы вернёт учебную схему.</p>
+      <summary>{t("Настроить размещение участков")}</summary>
+      <p>{t("Можно загрузить расположение четырёх участков по шаблону. Файл читается на этом устройстве и меняет только 3D-размещение. Показатели рассчитывает модель; обновление страницы вернёт учебную схему.")}</p>
       <div className='plant-layout-actions'>
-        <button type='button' onClick={download}><Download size={14} />Шаблон схемы</button>
-        <button type='button' onClick={() => fileInput.current?.click()}><Upload size={14} />Загрузить схему</button>
-        {layoutChanged && <button type='button' onClick={resetLayout}>Вернуть учебную схему</button>}
+        <button type='button' onClick={download}><Download size={14} />{t("Шаблон схемы")}</button>
+        <button type='button' onClick={() => fileInput.current?.click()}><Upload size={14} />{t("Загрузить схему")}</button>
+        {layoutChanged && <button type='button' onClick={resetLayout}>{t("Вернуть учебную схему")}</button>}
       </div>
-      <input ref={fileInput} className='plant-file' type='file' accept='.json,application/json' aria-label='Файл схемы участков' onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void upload(file); }} />
-      {layoutError && <p className='plant-layout-error' role='alert'>{layoutError}</p>}
-      {layoutChanged && <p className='plant-notice' role='status'>Загружена схема «{layout.title}». Производственные параметры не изменены.</p>}
+      <input ref={fileInput} className='plant-file' type='file' accept='.json,application/json' aria-label={t("Файл схемы участков")} onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void upload(file); }} />
+      {layoutError && <p className='plant-layout-error' role='alert'>{t(layoutError)}</p>}
+      {layoutChanged && <p className='plant-notice' role='status'>{t("Загружена схема «")}{layout.title}{t("». Производственные параметры не изменены.")}</p>}
     </details>
   </div>;
 }

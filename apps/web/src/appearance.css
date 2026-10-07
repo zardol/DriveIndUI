@@ -1,0 +1,71 @@
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #101c19; --surface: #1b2b25; --surface-2: #21342c;
+  --ink: #e6eee6; --ink-2: #c2d1c4; --ink-3: #a2b4a5;
+  --line: #34473c; --line-strong: #4c6353;
+  --accent: #80d2aa; --accent-strong: #a1e2bd; --accent-soft: #263f31;
+  --amber: #e4b86e; --amber-ink: #efd19b; --amber-soft: #443a26;
+  --red: #e79687; --red-ink: #ffc0b1; --red-soft: #452d2a;
+  --shadow: 0 1px 0 #ffffff06, 0 12px 32px -20px #0009;
+}
+.language-switch { display:flex; gap:2px; padding:3px; background:var(--surface-2); border:1px solid var(--line); border-radius:9px; }
+.language-switch button { border:0; border-radius:6px; padding:5px 8px; min-height:28px; font-size:10px; font-weight:650; color:var(--ink-3); background:transparent; cursor:pointer; }
+.language-switch button[aria-pressed='true'] { background:var(--accent-soft); color:var(--accent-strong); }
+.language-switch button:hover { color:var(--ink); }
+.theme-toggle { flex-shrink:0; border:1px solid var(--line); background:var(--surface); border-radius:9px; width:34px; height:34px; }
+.workbench .topbar { height:auto; min-height:65px; }
+.case-source-note { display:flex; align-items:flex-start; gap:9px; padding:11px 13px; margin:0 0 18px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); color:var(--ink-2); font-size:12px; line-height:1.6; }
+.case-source-note svg { flex-shrink:0; margin-top:2px; color:var(--accent); }
+.session-info-button { flex-shrink:0; border-radius:8px; color:var(--accent-strong); }
+.session-info-button[aria-expanded='true'] { background:var(--accent-soft); }
+.session-info-popover { position:fixed; z-index:150; width:min(320px, calc(100vw - 24px)); max-height:calc(100dvh - 24px); overflow:auto; padding:16px; background:var(--surface); color:var(--ink); border:1px solid var(--line-strong); border-radius:12px; box-shadow:0 16px 50px #0003; font-size:12px; line-height:1.65; }
+.session-info-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:10px; margin-bottom:12px; border-bottom:1px solid var(--line); }
+.session-info-heading strong { font-size:13px; }
+.session-info-popover p { margin-top:9px; color:var(--ink-2); }
+@media (prefers-reduced-motion:no-preference) {
+  body, .workbench.app, .card, .topbar, .rail, input, select, .case-panel, .cmp-panel { transition:background-color .22s ease, border-color .22s ease, color .22s ease; }
+  button, .btn, .rail__link, .workspace-tabs button { transition:background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+  .btn:active:not(:disabled), .theme-toggle:active { transform:translateY(1px); }
+  .workspace-page:not([hidden]), .overview-page, .ai-settings, .ai-result { animation:workspace-enter .28s ease-out both; }
+  .session-info-popover { animation:popover-enter .16s ease-out both; }
+  /* Opacity only: transforming a page would turn the expanded 3D view into a contained fixed box. */
+  @keyframes workspace-enter { from { opacity:0; } to { opacity:1; } }
+  @keyframes popover-enter { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+}
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *, *::before, *::after { animation:none!important; transition:none!important; } }
+@media(max-width:700px) { .workbench .topbar { padding:10px 12px; gap:8px; } .topbar__right { gap:6px; } .workbench .topbar .conn-chip { display:none; } .language-switch button { padding:6px 7px; } }
+
+:root[data-theme='dark'] .btn--primary { color:#10271a; background:#a1d5a6; border-color:#a1d5a6; }
+:root[data-theme='dark'] .btn--primary:hover:not(:disabled) { background:#b2e4b6; border-color:#b2e4b6; }
+:root[data-theme='dark'] .ai-analyze { background:#c0dca4!important; color:#173323!important; }
+:root[data-theme='dark'] .ai-horizons button[aria-pressed='true'] { background:#bcd6a2; color:#173323; }
+:root[data-theme='dark'] .ai-hero-meta .ai-online i { background:#b7e4a8; }
+:root[data-theme='dark'] .rail-live-dot { background:#b7e4a8; }
+:root[data-theme='dark'] .workbench .rail__link[aria-current='page'] { background:#bbd5a5; color:#163723; }
+:root[data-theme='dark'] .workbench .rail__link[aria-current='page'] small { color:#365137; }
+:root[data-theme='dark'] .workbench .overview-stations button i { background:var(--accent); }
+
+:root[data-theme='dark'] .plant-view { --plant-ink:var(--ink-2); }
+:root[data-theme='dark'] .history-viewer { --history-bg:var(--surface-2); --history-card:var(--surface); --history-ink:var(--ink); --history-green:var(--accent); --history-muted:var(--ink-3); --history-line:var(--line); }
+:root[data-theme='dark'] .st--idle { --st:#9bb0a4; --st-soft:#293c31; }
+:root[data-theme='dark'] .plant-station-dot.is-running { background:#66c6a2; }
+:root[data-theme='dark'] .plant-station-dot.is-idle { background:#9bb0a4; }
+:root[data-theme='dark'] .plant-station-dot.is-warning, :root[data-theme='dark'] .plant-station-dot.is-blocked { background:#e7bd75; }
+:root[data-theme='dark'] .plant-station-dot.is-stopped { background:#eea28f; }
+
+/* SVG panels keep their geometry; only surface/status colours follow the theme. */
+:root[data-theme='dark'] .flow-panel, :root[data-theme='dark'] .flow-queue-box { fill:var(--surface); }
+:root[data-theme='dark'] .flow-badge, :root[data-theme='dark'] .st--idle .flow-badge { fill:#293e32; }
+:root[data-theme='dark'] .st--running .flow-badge { fill:var(--accent-soft); }
+:root[data-theme='dark'] .st--warning .flow-badge, :root[data-theme='dark'] .st--blocked .flow-badge { fill:var(--amber-soft); }
+:root[data-theme='dark'] .st--stopped .flow-badge { fill:var(--red-soft); }
+:root[data-theme='dark'] .flow-bar-bg, :root[data-theme='dark'] .flow-queue-slot { fill:#3d5141; }
+:root[data-theme='dark'] .flow-queue-slot.is-filled { fill:var(--accent); }
+:root[data-theme='dark'] .flow-queue-slot.is-heavy, :root[data-theme='dark'] .st--warning .flow-top-stripe, :root[data-theme='dark'] .st--warning .flow-bar-fill { fill:var(--amber); }
+:root[data-theme='dark'] .st--warning .flow-badge-text { fill:var(--amber-ink); }
+:root[data-theme='dark'] .equip-bg, :root[data-theme='dark'] .equip-rack-frame { fill:#293b30; }
+:root[data-theme='dark'] .flow-alert text, :root[data-theme='dark'] .node__alert text, :root[data-theme='dark'] .legend__alert-text { fill:#271910; }
+:root[data-theme='dark'] .node.is-selected .node__box { fill:var(--accent-soft); }
+:root[data-theme='dark'] .bar-track, :root[data-theme='dark'] .slot { fill:#3d5141; }
+:root[data-theme='dark'] .slot--filled { fill:var(--accent); }
+:root[data-theme='dark'] .slot--heavy { fill:var(--amber); }

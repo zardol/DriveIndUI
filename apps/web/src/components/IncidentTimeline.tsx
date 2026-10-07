@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { useMemo } from 'react';
 import { formatClock, formatDuration } from '../format';
 import { SEVERITY_LABEL } from '../status';
@@ -19,16 +20,15 @@ export function IncidentTimeline({ snapshot }: { snapshot: PlantSnapshot }) {
       <div className='card__head'>
         <div>
           <h2 id='incidents-title' className='card__title'>
-            Инциденты смены
-          </h2>
+            {t("Инциденты смены")}</h2>
         </div>
         <span className={`pill ${activeCount > 0 ? 'pill--stale' : 'pill--neutral'}`}>
-          Активных: {activeCount}
+          {t("Активных: ")}{t(activeCount)}
         </span>
       </div>
 
       {sorted.length === 0 ? (
-        <p className='empty'>Остановок в этой смене пока нет.</p>
+        <p className='empty'>{t("Остановок в этой смене пока нет.")}</p>
       ) : (
         <ol className='timeline'>
           {sorted.map((item) => {
@@ -37,25 +37,25 @@ export function IncidentTimeline({ snapshot }: { snapshot: PlantSnapshot }) {
             const duration = (item.resolvedAtSeconds ?? snapshot.elapsedSeconds) - item.startedAtSeconds;
             return (
               <li key={item.id} className={`timeline__item timeline__item--${item.severity}`}>
-                <time className='timeline__time'>{formatClock(item.startedAtSeconds)}</time>
+                <time className='timeline__time'>{t(formatClock(item.startedAtSeconds))}</time>
                 <span className='timeline__dot' aria-hidden='true' />
                 <div className='timeline__body'>
                   <div className='timeline__top'>
                     <span className={`sev sev--${item.severity}`}>
                       <StatusGlyph status={item.severity === 'critical' ? 'stopped' : 'warning'} size={13} />
-                      {SEVERITY_LABEL[item.severity]}
+                      {t(SEVERITY_LABEL[item.severity])}
                     </span>
-                    <span className='timeline__station'>{station?.name ?? item.stationId}</span>
+                    <span className='timeline__station'>{t(station?.name ?? item.stationId)}</span>
                     <span className={`timeline__state${resolved ? '' : ' timeline__state--active'}`}>
-                      {resolved ? 'Устранён' : 'Активен'}
+                      {t(resolved ? 'Устранён' : 'Активен')}
                     </span>
                   </div>
-                  <h3 className='timeline__title'>{item.title}</h3>
-                  <details className='incident-description'><summary>Причина и условия</summary><p className='timeline__desc'>{item.description}</p></details>
+                  <h3 className='timeline__title'>{t(item.title)}</h3>
+                  <details className='incident-description'><summary>{t("Причина и условия")}</summary><p className='timeline__desc'>{t(item.description)}</p></details>
                   <p className='timeline__meta'>
-                    {resolved
+                    {t(resolved
                       ? `Устранён в ${formatClock(item.resolvedAtSeconds ?? 0)} · длительность ${formatDuration(duration)}`
-                      : `Идёт уже ${formatDuration(duration)} симуляции`}
+                      : `Идёт уже ${formatDuration(duration)} симуляции`)}
                   </p>
                 </div>
               </li>

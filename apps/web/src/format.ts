@@ -1,3 +1,5 @@
+import { locale } from './preferences';
+import { t } from './i18n';
 /** Смена начинается в 08:00 виртуального времени. */
 const SHIFT_START_SECONDS = 8 * 3600;
 
@@ -24,20 +26,28 @@ export function formatDuration(seconds: number): string {
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const rest = total % 60;
-  if (hours > 0) return `${hours} ч ${pad(minutes)} мин`;
-  if (minutes > 0) return `${minutes} мин ${pad(rest)} с`;
-  return `${rest} с`;
+  if (hours > 0) return t(`${hours} ч ${pad(minutes)} мин`);
+  if (minutes > 0) return t(`${minutes} мин ${pad(rest)} с`);
+  return t(`${rest} с`);
 }
 
-const integerFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
-const oneDigitFormat = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const numberFormats = new Map<string, { integer: Intl.NumberFormat; one: Intl.NumberFormat }>();
+function currentFormats() {
+  const code = locale();
+  let formats = numberFormats.get(code);
+  if (!formats) {
+    formats = { integer: new Intl.NumberFormat(code, { maximumFractionDigits: 0 }), one: new Intl.NumberFormat(code, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) };
+    numberFormats.set(code, formats);
+  }
+  return formats;
+}
 
 export function formatInt(value: number): string {
-  return integerFormat.format(safe(value));
+  return currentFormats().integer.format(safe(value));
 }
 
 export function formatOne(value: number): string {
-  return oneDigitFormat.format(safe(value));
+  return currentFormats().one.format(safe(value));
 }
 
 export function formatSigned(value: number): string {
@@ -56,5 +66,5 @@ export function clampPercent(value: number): number {
 }
 
 export function formatLocalTime(timestamp: number): string {
-  return new Date(timestamp).toLocaleTimeString('ru-RU');
+  return new Date(timestamp).toLocaleTimeString(locale());
 }

@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { TrendingFlat } from './TrendingFlat';
 import { formatClock, formatInt, formatSigned } from '../format';
 import type { PlantSnapshot } from '../types';
@@ -5,9 +6,9 @@ import type { PlantSnapshot } from '../types';
 export function ForecastCard({ snapshot }: { snapshot: PlantSnapshot }) {
   if (snapshot.goodUnits + snapshot.rejectedUnits === 0) {
     return <section className='card forecast' aria-labelledby='forecast-title'>
-      <h2 id='forecast-title' className='forecast__title'>Оценка выпуска к концу смены</h2>
-      <p className='forecast__diff'>Собираем статистику выпуска</p>
-      <p className='forecast__note'>Оценка появится после первого проверенного автомобиля.</p>
+      <h2 id='forecast-title' className='forecast__title'>{t("Оценка выпуска к концу смены")}</h2>
+      <p className='forecast__diff'>{t("Собираем статистику выпуска")}</p>
+      <p className='forecast__note'>{t("Оценка появится после первого проверенного автомобиля.")}</p>
     </section>;
   }
   const forecast = Math.round(snapshot.forecastUnits);
@@ -20,20 +21,18 @@ export function ForecastCard({ snapshot }: { snapshot: PlantSnapshot }) {
       <div className='forecast__head'>
         <TrendingFlat />
         <h2 id='forecast-title' className='forecast__title'>
-          Оценка по текущему темпу
-        </h2>
+          {t("Оценка по текущему темпу")}</h2>
       </div>
       <p className='forecast__value'>
-        ≈ {formatInt(forecast)}
-        <span className='kpi__unit'> ед. к {formatClock(snapshot.shiftSeconds, false)}</span>
+        ≈ {t(formatInt(forecast))}
+        <span className='kpi__unit'> {t(" ед. к ")}{t(formatClock(snapshot.shiftSeconds, false))}</span>
       </p>
       <p className='forecast__diff'>
-        {below ? 'Ниже плана' : 'Не ниже плана'}: {formatSigned(diff)} ед. к плану {formatInt(snapshot.shiftPlan)}
-        {percent !== null ? ` (${formatInt(percent)}% плана)` : ''}
+        {t(below ? 'Ниже плана' : 'Не ниже плана')}: {t(formatSigned(diff))} {t(" ед. к плану ")}{t(formatInt(snapshot.shiftPlan))}
+        {t(percent !== null ? ` (${formatInt(percent)}% плана)` : '')}
       </p>
       <p className='forecast__note'>
-        Экстраполяция среднего темпа с начала смены. Не учитывает будущие сбои и управленческие действия.
-      </p>
+        {t("Экстраполяция среднего темпа с начала смены. Не учитывает будущие сбои и управленческие действия.")}</p>
     </section>
   );
 }
