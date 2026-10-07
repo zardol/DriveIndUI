@@ -72,13 +72,13 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
   return <div className='ai-workspace'>
     <section className='ai-hero'>
       <div className='ai-hero-copy'><span className='ai-overline'><Sparkles size={15} />ПРОГНОЗ РИСКОВ</span>
-        <h2>Предупредить простой.<br />Сохранить темп.</h2>
+        <h2>Анализ ИИ</h2>
         <p>ИИ сопоставит текущую загрузку, очереди и историю остановок — и предложит, что проверить в первую очередь.</p>
         <div className='ai-hero-meta'><span><BrainCircuit size={15} />{AI_MODEL_LABEL}</span><span className={canAnalyze ? 'ai-online' : ''}><i />{statusLabel}</span></div>
       </div>
       <div className='ai-run-panel'>
-        <label htmlFor='ai-horizon'>Горизонт анализа</label>
-        <div className='ai-horizons' id='ai-horizon' role='group' aria-label='Горизонт анализа'>
+        <label htmlFor='ai-horizon'>Прогноз на</label>
+        <div className='ai-horizons' id='ai-horizon' role='group' aria-label='Период прогноза'>
           {([15, 30, 60] as const).map(minutes => <button type='button' key={minutes} aria-pressed={horizon === minutes} onClick={() => setHorizon(minutes)} disabled={pending}>{minutes} мин</button>)}
         </div>
         <button className='btn ai-analyze' type='button' disabled={!canAnalyze || disabled || pending || checking} onClick={analyze}>
@@ -104,7 +104,7 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
 
     {result && <section className='ai-result' aria-label='Результат анализа OpenAI' aria-busy={pending}>
       <div className='ai-result-heading'><div><span className='ai-overline'>ВЫВОД OPENAI</span><h2>{result.report.summary}</h2></div><span className='ai-report-time'><Clock3 size={14} />Срез {formatClock(result.input.elapsedSeconds)}<br />+{result.input.horizonMinutes} мин</span></div>
-      {oldResult && <p className='ai-stale'><RefreshCw size={15} />Состояние смены или горизонт изменились. Вывод относится к сохранённому срезу.</p>}
+      {oldResult && <p className='ai-stale'><RefreshCw size={15} />Показатели смены или период прогноза изменились. Вывод относится к сохранённому срезу.</p>}
       <div className='ai-findings'>{result.report.findings.map((finding, index) => <article className={`ai-finding ai-finding--${finding.level}`} key={`${finding.stationId}-${index}`}>
         <div className='ai-finding-tags'><span>{kindLabels[finding.kind]}</span><span className={`ai-risk ai-risk--${finding.level}`}>{riskLabels[finding.level]}</span></div>
         <h3>{finding.title}</h3><dl><div><dt>Основание</dt><dd>{finding.evidence}</dd></div><div><dt>Прогноз</dt><dd>{finding.forecast}</dd></div><div><dt>Действие</dt><dd>{finding.action}</dd></div></dl>
@@ -118,8 +118,8 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
       <div className='ai-section-heading'><div><span className='ai-overline'>ТЕКУЩАЯ МОЩНОСТЬ</span><h2>Где может накапливаться очередь</h2></div><span className='ai-local-label'>Расчёт по циклам · без ИИ</span></div>
       <div className='ai-kpis'><div><span>Требуемый темп до конца смены</span><strong>{number(indicators.requiredPerHour)} <small>авто/ч</small></strong></div><div><span>Расчётный предел годного выпуска</span><strong>{number(indicators.lineCapacityPerHour)} <small>авто/ч</small></strong></div><div><span>Самый длинный цикл</span><strong>{AI_STATION_NAMES[indicators.bottleneckStationId]}</strong></div></div>
       {indicators.shiftEnded || indicators.ordersExhausted ? <p className='ai-neutral'>{indicators.shiftEnded ? 'Смена завершена. Для нового прогноза начните следующую смену.' : 'Заказы смены выполнены. Новый поток не ожидается.'}</p> : null}
-      <div className='ai-capacity-table'><table><thead><tr><th>Участок</th><th>Мощность, авто/ч</th><th>Буфер сейчас</th><th>Оценка через {number(indicators.horizonMinutes)} мин</th><th>До заполнения</th></tr></thead><tbody>
-        {indicators.stations.map(station => <tr key={station.stationId}><th><button type='button' onClick={() => onStation(station.stationId)}>{AI_STATION_NAMES[station.stationId]}<ArrowUpRight size={13} /></button>{station.stopped && <small>Остановлен сейчас</small>}</th><td>{number(station.capacityPerHour)}</td><td>{formatInt(station.queueNow)} / {input.stations.find(s => s.id === station.stationId)!.bufferCapacity}</td><td><span className={`ai-risk ai-risk--${station.level}`}>{number(station.queueAtHorizon)} авто</span></td><td>{station.minutesToFull === null || station.minutesToFull > indicators.horizonMinutes ? 'Вне горизонта' : station.minutesToFull === 0 ? 'Буфер заполнен' : `≈ ${number(station.minutesToFull)} мин`}</td></tr>)}
+      <div className='ai-capacity-table'><table><thead><tr><th>Участок</th><th>Мощность, авто/ч</th><th>Машин в очереди сейчас</th><th>Машин в очереди через {number(indicators.horizonMinutes)} мин</th><th>Когда очередь заполнится</th></tr></thead><tbody>
+        {indicators.stations.map(station => <tr key={station.stationId}><th><button type='button' onClick={() => onStation(station.stationId)}>{AI_STATION_NAMES[station.stationId]}<ArrowUpRight size={13} /></button>{station.stopped && <small>Остановлен сейчас</small>}</th><td>{number(station.capacityPerHour)}</td><td>{formatInt(station.queueNow)} / {input.stations.find(s => s.id === station.stationId)!.bufferCapacity}</td><td><span className={`ai-risk ai-risk--${station.level}`}>{number(station.queueAtHorizon)} авто</span></td><td>{station.minutesToFull === null || station.minutesToFull > indicators.horizonMinutes ? `Не заполнится за ${number(indicators.horizonMinutes)} мин` : station.minutesToFull === 0 ? 'Свободных мест нет' : `Через ≈ ${number(station.minutesToFull)} мин`}</td></tr>)}
       </tbody></table></div>
       <p className='ai-footnote'>Оценка при неизменной подаче и длительности циклов, без будущих событий сценария. Не учитывает дискретное движение, восстановление после остановки и обратное влияние заполненных буферов.</p>
     </section>

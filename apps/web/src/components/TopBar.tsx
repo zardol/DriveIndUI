@@ -19,7 +19,6 @@ export function TopBar({ connection, sessionId }: TopBarProps) {
   return (
     <header className='topbar'>
       <div className='topbar__brand'>
-        <span className='topbar__name'>Цифровой двойник</span>
         <span className='topbar__sub'>Allur / Октябрь 2026</span>
       </div>
       <div className='topbar__right'>
