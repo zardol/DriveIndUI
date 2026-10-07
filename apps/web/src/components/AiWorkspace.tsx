@@ -20,6 +20,8 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
   const [accessCode, setAccessCode] = useState('');
   const [checkedCode, setCheckedCode] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [accessPrompt, setAccessPrompt] = useState<string | null>(null);
+  const accessCodeInput = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<AiStatus | null>(null);
   const [checking, setChecking] = useState(false);
   const [pending, setPending] = useState(false);
@@ -47,7 +49,15 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
   useEffect(() => () => request.current?.abort(), []);
 
   const analyze = () => {
-    if (!canAnalyze || base === null || disabled || request.current) return;
+    if (disabled || pending || request.current) return;
+    if (!canAnalyze || base === null || checking) {
+      setError(null); setSettingsOpen(true);
+      setAccessPrompt(!normalizedCode ? 'Введите код доступа, затем нажмите «Проверить подключение».'
+        : checking ? 'Проверяем подключение. Дождитесь подтверждения доступа.'
+        : 'Подтвердите код доступа кнопкой «Проверить подключение», затем запустите анализ.');
+      accessCodeInput.current?.focus();
+      return;
+    }
     const controller = new AbortController(); request.current = controller;
     setPending(true); setError(null);
     void requestAiAnalysis(base, input, checkedCode, controller.signal).then(value => {
@@ -64,7 +74,7 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
     try {
       const nextBase = urlDraft.trim() ? normalizeAiUrl(urlDraft.trim()) : defaultAiUrl();
       setBase(nextBase); setUrlDraft(nextBase ?? ''); setAccessCode(normalizedCode); setCheckedCode(normalizedCode);
-      setStatus(null); setConnectionError(null); setError(null); setRefreshStatus(value => value + 1);
+      setStatus(null); setConnectionError(null); setError(null); setAccessPrompt(null); setRefreshStatus(value => value + 1);
     } catch (reason) { setConnectionError(reason instanceof Error ? reason.message : 'Проверьте адрес.'); }
   };
   const statusLabel = checking ? 'Проверяем подключение…' : canAnalyze ? 'Готов к анализу' : connectionError ? 'Подключение не подтверждено' : status?.configured ? normalizedCode ? 'Проверьте код доступа' : 'Нужен код доступа' : 'OpenAI не подключён';
@@ -81,10 +91,9 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
         <div className='ai-horizons' id='ai-horizon' role='group' aria-label='Период прогноза'>
           {([15, 30, 60] as const).map(minutes => <button type='button' key={minutes} aria-pressed={horizon === minutes} onClick={() => setHorizon(minutes)} disabled={pending}>{minutes} мин</button>)}
         </div>
-        <button className='btn ai-analyze' type='button' disabled={!canAnalyze || disabled || pending || checking} onClick={analyze}>
+        <button className='btn ai-analyze' type='button' disabled={disabled || pending} onClick={analyze}>
           {pending ? <LoaderCircle size={18} className='ai-spin' /> : <Sparkles size={18} />}{pending ? 'Анализируем смену…' : result ? 'Обновить ИИ-анализ' : 'Проанализировать риски'}
         </button>
-        <small>Запуск вручную · только текущие показатели</small>
         <button className='ai-connect-button' type='button' aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}><Link2 size={14} />Подключение <ChevronDown size={13} /></button>
       </div>
     </section>
@@ -92,11 +101,12 @@ export function AiWorkspace({ snapshot, active, disabled, onStation }: {
     {settingsOpen && <section className='card ai-settings'>
       <div><h3>Подключение к ИИ-сервису</h3><p>API-ключ хранится на сервере. Код доступа к демонстрации остаётся только в памяти этой вкладки.</p></div>
       <label>Адрес сервера<input type='url' placeholder='https://your-server.example' value={urlDraft} onChange={event => setUrlDraft(event.target.value)} autoComplete='off' /></label>
-      <label>Код доступа<input type='password' value={accessCode} onChange={event => { setAccessCode(event.target.value); setConnectionError(null); }} autoComplete='off' placeholder='Только строка кода демонстрации' /></label>
+      <label>Код доступа<input ref={accessCodeInput} autoFocus={Boolean(accessPrompt)} type='password' value={accessCode} onChange={event => { setAccessCode(event.target.value); setConnectionError(null); }} autoComplete='off' placeholder='Только строка кода демонстрации' /></label>
       <button className='btn btn--primary' type='button' onClick={connect} disabled={checking || pending}>Проверить подключение</button>
       {connectionError && <p role='alert' className='ai-error'>{connectionError}</p>}
+      {accessPrompt && !canAnalyze && !connectionError && <p role='status'>{accessPrompt}</p>}
       {canAnalyze && !checking && <p role='status' className='ai-connection-success'><ShieldCheck size={16} />Доступ подтверждён. Можно запускать ИИ-анализ.</p>}
-      {status?.configured && !canAnalyze && !checking && !connectionError && <p>Сервер доступен. Введите код демонстрации и нажмите «Проверить подключение».</p>}
+      {status?.configured && !canAnalyze && !checking && !connectionError && !accessPrompt && <p>Сервер доступен. Введите код демонстрации и нажмите «Проверить подключение».</p>}
     </section>}
 
     {error && <div role='alert' className='ai-alert'><TriangleAlert size={18} /><span>{error}</span></div>}
