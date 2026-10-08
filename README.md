@@ -4,6 +4,14 @@
 
 **[Открыть демо](https://zardol.github.io/DriveIndUI/)**
 
+## Трейлер
+
+[![Трейлер DriveIndUI](apps/web/public/media/driveindui-trailer-poster.webp)](https://zardol.github.io/DriveIndUI/media/driveindui-trailer.mp4)
+
+24 секунды · 1080p · **[Смотреть трейлер](https://zardol.github.io/DriveIndUI/media/driveindui-trailer.mp4)**
+
+[Скачать MP4](https://raw.githubusercontent.com/zardol/DriveIndUI/main/apps/web/public/media/driveindui-trailer.mp4)
+
 ## Возможности по ТЗ
 
 - **Визуализация производства:** 3D-цех и 2D-схема, оборудование, движение каждого автомобиля и очереди на конвейере.
